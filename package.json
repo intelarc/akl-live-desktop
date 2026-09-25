@@ -1,0 +1,43 @@
+{
+  "name": "akl-live-desktop",
+  "productName": "AKL Live",
+  "version": "1.0.0",
+  "description": "Live Auckland buses and trains for Windows",
+  "main": "main.js",
+  "author": "Aryan Narayan",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.4.5",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "nz.aryan.akllive.desktop",
+    "productName": "AKL Live",
+    "copyright": "Aryan Narayan",
+    "files": ["main.js", "preload.js", "package.json", "src/**/*"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "AKL Live",
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "uninstallDisplayName": "AKL Live",
+      "artifactName": "AKL-Live-Setup-${version}.exe",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

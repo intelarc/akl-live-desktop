@@ -1,0 +1,58 @@
+name: Build Windows app
+
+# Builds the installer with the AT API key (a repository secret) built in, and
+# puts it on the "latest" release. This repo is private, so the release is too.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build in the API key
+        shell: pwsh
+        env:
+          AT_API_KEY: ${{ secrets.AT_API_KEY }}
+        run: |
+          if (-not $env:AT_API_KEY) { throw "The AT_API_KEY secret is missing" }
+          "// Built into the app by CI; not in git.`nwindow.AKL_KEYS = { at: '$($env:AT_API_KEY)' };" | Out-File -Encoding utf8NoBOM src/js/keys.js
+
+      - name: Version
+        shell: bash
+        run: npm version "1.0.${{ github.run_number }}" --no-git-tag-version
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Check the scripts parse
+        shell: bash
+        run: for f in main.js preload.js src/js/*.js src/js/views/*.js; do node --check "$f" || exit 1; done
+
+      - name: Build the installer
+        run: npx electron-builder --win nsis --x64 --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AKL-Live-Setup
+          path: dist/*.exe
+
+      - name: Publish to the "latest" release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest dist/*.exe \
+            --title "AKL Live for Windows (build ${{ github.run_number }})" \
+            --notes "Built from ${{ github.sha }}. Run the installer: it adds AKL Live to the Start menu and the desktop. Installing a newer build updates it in place."
