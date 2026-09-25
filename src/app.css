@@ -228,8 +228,8 @@ kbd { font: 600 11px var(--font); background: var(--surface2); border: 1px solid
 .line-chip b { color: var(--muted); }
 .split { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 380px; gap: 18px; }
 .map-host { padding: 0; overflow: hidden; min-height: 420px; }
-.train-canvas, .real-map { position: absolute; inset: 0; width: 100%; height: 100%; }
-.train-canvas[hidden], .real-map[hidden] { display: none; }
+.real-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+.real-map[hidden] { display: none; }
 .map-tools { position: absolute; top: 14px; left: 14px; z-index: 5; display: flex; gap: 8px; }
 .map-tools.right { left: auto; right: 14px; }
 .map-tools .seg { background: var(--glass); backdrop-filter: blur(10px); box-shadow: var(--shadow); }

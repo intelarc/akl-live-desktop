@@ -105,5 +105,6 @@
     async route(short) { await need(); return send('route', { short }); },
     async trip(tripId) { await need(); return send('trip', { tripId }); },
     async routes() { await need(); return send('routesList'); },
+    async railTrack(segs) { await need(); return send('railTrack', { segs }); },
   };
 })(window.AKL);

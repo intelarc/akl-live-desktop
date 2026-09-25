@@ -22,8 +22,9 @@
     const nowSec = T.now();
     const h = T.parts(Date.now()).h;
     const queries = [];
-    for (let s = Math.max(0, h - 1); s < Math.min(24, h - 1 + hours); s += 3) queries.push([T.date(), s]);
-    if (h < 3) queries.push([T.date(null, -1), h + 23]);            // after midnight: last night's late buses
+    // AT's API takes start_hour 0 as missing (400), so a window from midnight starts at 1
+    for (let s = Math.max(1, h - 1); s < Math.min(24, h - 1 + hours); s += 3) queries.push([T.date(), s]);
+    if (h < 3) queries.push([T.date(null, -1), 24]);                // after midnight: last night's late buses (24:xx)
     const out = new Map();
     const pages = await Promise.all(queries.map(([date, hour]) => A.api.get(`/gtfs/v3/stops/${stopId}/stoptrips?` +
       `filter%5Bdate%5D=${date}&filter%5Bstart_hour%5D=${hour}&hour_range=3`)));
@@ -207,10 +208,14 @@
       const now = T.now();
       const h = T.parts(Date.now()).h;
       const rows = [];
+      // AT's API takes start_hour 0 as missing (400); after midnight the trains still running
+      // belong to yesterday's timetable, at 24:xx
+      const windows = [[T.date(), Math.max(1, h)]];
+      if (h < 2) windows.push([T.date(null, -1), 24 + h]);
       await Promise.all(Object.keys(st.platforms).map(async (stopId) => {
-        const j = await A.api.get(`/gtfs/v3/stops/${stopId}/stoptrips?filter%5Bdate%5D=${T.date()}` +
-                                  `&filter%5Bstart_hour%5D=${h}&hour_range=2`);
-        for (const e of (j && j.data) || []) {
+        const pages = await Promise.all(windows.map(([date, hour]) => A.api.get(`/gtfs/v3/stops/${stopId}/stoptrips?filter%5Bdate%5D=${date}` +
+                                  `&filter%5Bstart_hour%5D=${hour}&hour_range=2`)));
+        for (const e of pages.flatMap((j) => (j && j.data) || [])) {
           const a = e.attributes;
           if (!a || a.pickup_type === 1) continue;
           const rid = String(a.route_id || '');

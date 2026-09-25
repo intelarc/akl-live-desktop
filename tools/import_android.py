@@ -41,7 +41,8 @@ def network():
         "h": float(re.search(r"const val H = (" + NUM + ")f", src).group(1)),
         "lineIds": re.findall(r'"([^"]+)"', re.search(r"LINE_IDS = arrayOf\(([^)]*)\)", src).group(1)),
         "lineNames": re.findall(r'"([^"]+)"', re.search(r"LINE_NAMES = arrayOf\(([^)]*)\)", src).group(1)),
-        "lineColors": ["#" + c[-6:] for c in re.findall(r"0x([0-9A-Fa-f]{8})", re.search(r"LINE_COLORS = longArrayOf\(([^)]*)\)", src).group(1))],
+        # AT's own line colours: route_color for E-W-201, S-C-201 and O-W-201 in its GTFS
+        "lineColors": ["#97C93D", "#D52923", "#00AEEF"],
         "lineDraw": f_list("LINE_DRAW"),
         "crlLoop": one("CRL_LOOP"),
         "land": f_list("LAND"),

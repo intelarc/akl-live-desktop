@@ -42,9 +42,17 @@ Running a newer installer updates it in place and keeps your settings.
     the next five buses, and the rest of today's timetable.
   - A live route map, the weather for the next six hours, and alerts affecting
     your route or stops at the top.
-- **Trains.** The post-CRL network diagram with every train moving live.
-  Click a train for its next stops, or a station for departures from every
-  platform. Satellite or Map views show every train at its real GPS position.
+- **Trains.** Auckland's whole rail network in AT's line colours (East West,
+  South City, Onehunga West, and Te Huia to Hamilton), drawn along the real
+  tracks from AT's timetable.
+  - Lines that share rails run side by side, in the order they really sit.
+    Where lines use different platforms (the CRL and the western line at
+    Maungawhau), each keeps to its own, and a bar joins the station's
+    platforms.
+  - Every train sits where its GPS puts it, snapped onto its line. It points
+    the way it's heading, with a dot when it's running late.
+  - Click a train for its next stops, or a station for departures from every
+    platform. Satellite and Map show the same over aerial photos or streets.
 - **Live.** Every bus in Auckland on one map (about 1,200 at rush hour), plus
   trains and ferries if you like.
   - Search by route, fleet number or model. Showing a route draws its path
@@ -100,8 +108,8 @@ Electron around plain web pages in `src/` (no framework, no bundler).
   directions (both OpenStreetMap data).
 - **Alerts** come from AT's `servicealerts` feed.
 
-`src/js/data/` is generated from the Android repo: the network schematic, the
-27H's stops and the fleet list. Re-run this after changing them there:
+`src/js/data/` is generated from the Android repo: the train network (stations,
+platforms and lines, in AT's GTFS colours), the 27H's stops and the fleet list. Re-run this after changing them there:
 
     python tools/import_android.py
 

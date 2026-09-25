@@ -63,7 +63,47 @@
       ],
     };
   }
+  /** The colours of the quiet diagram map, light and dark. */
+  A.DIAGRAM = {
+    light: { bg: '#F4F1EA', water: '#CADFEE', green: '#E2EAD5', road: '#E4DED2', minor: '#EBE6DC', rail: '#CFC8BA', building: '#EAE5DB', label: '#8B93A2', water_label: '#6F93B3' },
+    dark: { bg: '#172234', water: '#0B1625', green: '#172A24', road: '#233049', minor: '#1E2A40', rail: '#2E3C57', building: '#1C283B', label: '#6C7B94', water_label: '#46709A' },
+  };
+  /** A quiet map for the train diagram: land, water, parks, faint roads and suburb names, so the lines stand out. */
+  function diagram(dark) {
+    const c = A.DIAGRAM[dark ? 'dark' : 'light'];
+    const zoom = ['zoom'];
+    return {
+      version: 8, glyphs: GLYPHS,
+      sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet', attribution: '© OpenMapTiles © OpenStreetMap contributors' } },
+      layers: [
+        { id: 'bg', type: 'background', paint: { 'background-color': c.bg } },
+        { id: 'dg-green', type: 'fill', source: 'omt', 'source-layer': 'landcover', filter: ['match', ['get', 'class'], ['wood', 'grass'], true, false],
+          paint: { 'fill-color': c.green, 'fill-opacity': 0.55 } },
+        { id: 'dg-park', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-color': c.green, 'fill-opacity': 0.8 } },
+        { id: 'dg-water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': c.water } },
+        { id: 'dg-buildings', type: 'fill', source: 'omt', 'source-layer': 'building', minzoom: 14.5, paint: { 'fill-color': c.building } },
+        { id: 'dg-minor', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 13,
+          filter: ['match', ['get', 'class'], ['secondary', 'tertiary', 'minor'], true, false], layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': c.minor, 'line-width': ['interpolate', ['linear'], zoom, 13, 0.6, 17, 5] } },
+        { id: 'dg-roads', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 8,
+          filter: ['match', ['get', 'class'], ['motorway', 'trunk', 'primary'], true, false], layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': c.road, 'line-width': ['interpolate', ['linear'], zoom, 8, 0.5, 12, 1.6, 16, 6] } },
+        { id: 'dg-rail', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 13.5,
+          filter: ['all', ['==', ['get', 'class'], 'rail'], ['!=', ['get', 'brunnel'], 'tunnel']],
+          paint: { 'line-color': c.rail, 'line-width': 1, 'line-dasharray': [3, 2] } },
+        { id: 'dg-water-names', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 10,
+          layout: { 'text-field': nameExpr, 'text-font': ['Noto Sans Italic'], 'text-size': 12, 'text-letter-spacing': 0.12, 'text-max-width': 7 },
+          paint: { 'text-color': c.water_label } },
+        { id: 'dg-places', type: 'symbol', source: 'omt', 'source-layer': 'place', minzoom: 10.5,
+          filter: ['match', ['get', 'class'], ['suburb', 'neighbourhood', 'quarter', 'town', 'village'], true, false],
+          layout: { 'text-field': nameExpr, 'text-font': FONT_R, 'text-size': ['interpolate', ['linear'], zoom, 11, 10, 15, 12.5],
+                    'text-transform': 'uppercase', 'text-letter-spacing': 0.14, 'text-max-width': 8, 'text-padding': 8 },
+          paint: { 'text-color': c.label, 'text-opacity': 0.8 } },
+      ],
+    };
+  }
   function styleFor(basemap) {
+    if (basemap === 'diagram') return diagram(A.isDark());
     return basemap === 'streets' ? 'https://tiles.openfreemap.org/styles/' + (A.isDark() ? 'dark' : 'liberty') : satellite(A.isDark());
   }
 
@@ -96,6 +136,22 @@
     ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.roundRect(5, 6, 10, 5, 2); ctx.fill();
     ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(3, 29, 14, 1.5);
   });
+  /** A train on the diagram: a disc in its line's colour with a little train in it. */
+  const trainDotImg = (col) => image(32, 32, (ctx) => {
+    ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.arc(16, 17.2, 10.4, 0, 7); ctx.fill();
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(16, 16, 10.4, 0, 7); ctx.fill();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(16, 16, 8.4, 0, 7); ctx.fill();
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.roundRect(12, 10.6, 8, 9.2, [3, 3, 1.4, 1.4]); ctx.fill();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(13.3, 12, 5.4, 3, 1); ctx.fill();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(14, 17.6, 0.9, 0, 7); ctx.arc(18, 17.6, 0.9, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 1.3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(13.4, 20.2); ctx.lineTo(12.2, 22); ctx.moveTo(18.6, 20.2); ctx.lineTo(19.8, 22); ctx.stroke();
+  });
+  /** Its heading: a tip that sits outside the disc and turns with the train. */
+  const trainTipImg = (col) => image(32, 32, (ctx) => {
+    ctx.beginPath(); ctx.moveTo(16, 0.8); ctx.lineTo(22.4, 9.6); ctx.lineTo(9.6, 9.6); ctx.closePath();
+    ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.stroke();
+  });
   /** A stop sign from above: an AT roundel. */
   const stopImg = (col) => image(22, 22, (ctx) => {
     ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(11, 11, 10, 0, 7); ctx.fill();
@@ -125,7 +181,7 @@
     constructor(el, o) {
       this.o = o || {};
       this.basemap = this.o.basemap || A.settings.get('basemap');
-      this.data = { lines: [], stops: [], crowd: [], journey: null, allStops: null };
+      this.data = { lines: [], links: [], stops: [], crowd: [], journey: null, allStops: null };
       this.glides = new Map();
       this.crowdStart = 0;
       this.marks = new Map();
@@ -189,6 +245,11 @@
       }
       A.NET.lineColors.forEach((c, i) => { if (!m.hasImage('train-' + i)) m.addImage('train-' + i, trainImg(c), { pixelRatio: 2 }); });
       if (!m.hasImage('train-x')) m.addImage('train-x', trainImg('#56647E'), { pixelRatio: 2 });
+      A.NET.lineColors.concat(['#56647E']).forEach((c, i) => {
+        const k = i < A.NET.lineColors.length ? i : 'x';
+        if (!m.hasImage('tdot-' + k)) m.addImage('tdot-' + k, trainDotImg(c), { pixelRatio: 2 });
+        if (!m.hasImage('ttip-' + k)) m.addImage('ttip-' + k, trainTipImg(c), { pixelRatio: 2 });
+      });
       for (const [k, c] of [['bus', '#235EA8'], ['train', '#1A2744'], ['ferry', '#0A8F8F']]) if (!m.hasImage('stop-' + k)) m.addImage('stop-' + k, stopImg(c), { pixelRatio: 2 });
       if (!m.getSource('akl-terrain')) m.addSource('akl-terrain', TERRAIN);
       // streets style: its own 3D buildings are there; add a soft hillshade from the terrain
@@ -203,7 +264,7 @@
           : { 'sky-color': '#7fb4ef', 'horizon-color': '#e4f1ff', 'fog-color': '#dfeaf7', 'sky-horizon-blend': 0.55, 'horizon-fog-blend': 0.5, 'fog-ground-blend': 0.35, 'atmosphere-blend': 0.8 });
       } catch (e) { /* older MapLibre */ }
 
-      for (const id of ['akl-lines', 'akl-stops', 'crowd', 'jny', 'akl-allstops']) if (!m.getSource(id)) m.addSource(id, { type: 'geojson', data: empty() });
+      for (const id of ['akl-lines', 'akl-links', 'akl-stops', 'crowd', 'jny', 'akl-allstops']) if (!m.getSource(id)) m.addSource(id, { type: 'geojson', data: empty() });
       const zoom = ['zoom'];
       // every stop in Auckland (off until a screen wants them)
       m.addLayer({ id: 'allstops', type: 'symbol', source: 'akl-allstops', minzoom: 14.2,
@@ -211,20 +272,37 @@
                   'icon-size': ['interpolate', ['linear'], zoom, 14.2, 0.55, 17, 0.9], 'icon-allow-overlap': true,
                   'text-field': ['step', zoom, '', 16.2, ['concat', ['get', 'code'], ' ', ['get', 'name']]], 'text-font': FONT_R, 'text-size': 11,
                   'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-optional': true, 'text-max-width': 9 },
-        paint: { 'text-color': this.basemap === 'streets' && !dark ? '#1A2744' : '#ffffff', 'text-halo-color': this.basemap === 'streets' && !dark ? 'rgba(255,255,255,0.9)' : 'rgba(8,14,26,0.85)', 'text-halo-width': 1.4 } });
+        paint: { 'text-color': this.basemap !== 'satellite' && !dark ? '#1A2744' : '#ffffff', 'text-halo-color': this.basemap !== 'satellite' && !dark ? 'rgba(255,255,255,0.9)' : 'rgba(8,14,26,0.85)', 'text-halo-width': 1.4 } });
 
-      // routes and their stops
+      // routes and their stops. Lines marked z (the train network) grow as you zoom in,
+      // side by side where they share track, with a hairline of the map between them.
+      const dg = this.basemap === 'diagram';
+      const caseCol = dg ? A.DIAGRAM[dark ? 'dark' : 'light'].bg : this.basemap === 'streets' && !dark ? '#FFFFFF' : '#0B1628';
+      const zs = (v) => ['interpolate', ['linear'], zoom, 9, ['*', v, ['case', ['get', 'z'], 0.6, 1]], 12, v, 16, ['*', v, ['case', ['get', 'z'], 1.9, 1]]];
       m.addLayer({ id: 'akl-lines-case', type: 'line', source: 'akl-lines', layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#0B1628', 'line-opacity': 0.55, 'line-width': ['+', ['get', 'width'], 3], 'line-offset': ['get', 'offset'] } });
+        paint: { 'line-color': ['case', ['get', 'z'], caseCol, '#0B1628'], 'line-opacity': ['case', ['get', 'z'], dg ? 1 : 0.8, 0.55],
+                 'line-width': zs(['+', ['get', 'width'], ['case', ['get', 'z'], 2.2, 3]]), 'line-offset': zs(['get', 'offset']) } });
       m.addLayer({ id: 'akl-lines', type: 'line', source: 'akl-lines', layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': ['get', 'color'], 'line-width': ['get', 'width'], 'line-offset': ['get', 'offset'] } });
+        paint: { 'line-color': ['get', 'color'], 'line-width': zs(['get', 'width']), 'line-offset': zs(['get', 'offset']) } });
+      // a station with platforms on different tracks: a bar joining them
+      m.addLayer({ id: 'akl-links-case', type: 'line', source: 'akl-links', layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': ['get', 'color'], 'line-width': ['interpolate', ['linear'], zoom, 9, 6, 12, 11.4, 16, 19] } });
+      m.addLayer({ id: 'akl-links', type: 'line', source: 'akl-links', layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#FFFFFF', 'line-width': ['interpolate', ['linear'], zoom, 9, 2.8, 12, 6.2, 16, 13.8] } });
       m.addLayer({ id: 'akl-stops', type: 'circle', source: 'akl-stops',
         paint: { 'circle-color': '#FFFFFF', 'circle-stroke-color': ['get', 'color'],
-                 'circle-radius': ['interpolate', ['linear'], zoom, 10, ['case', ['get', 'big'], 7, 2.6], 14, ['case', ['get', 'big'], 8, 4.4]],
-                 'circle-stroke-width': ['case', ['get', 'big'], 4, 2] } });
+                 'circle-radius': ['interpolate', ['linear'], zoom, 9, ['case', ['get', 'big'], 6.5, ['*', 2, ['get', 'r']]], 12, ['case', ['get', 'big'], 7.5, ['*', 3.6, ['get', 'r']]],
+                                   16, ['case', ['get', 'big'], 9, ['*', 6.4, ['get', 'r']]]],
+                 'circle-stroke-width': ['interpolate', ['linear'], zoom, 9, ['case', ['get', 'big'], 4, ['>', ['get', 'r'], 1.3], 1.6, 1.3], 13, ['case', ['get', 'big'], 4, ['>', ['get', 'r'], 1.3], 2.6, 2]] } });
+      // labels: the most important stations win the space, the rest appear as you zoom in
+      const labelOn = (rank) => ['case', ['<=', ['get', 'rank'], rank], ['get', 'label'], ''];
+      const darkLabels = this.basemap === 'satellite' ? false : dark;
       m.addLayer({ id: 'akl-stop-labels', type: 'symbol', source: 'akl-stops', filter: ['has', 'label'],
-        layout: { 'text-field': ['get', 'label'], 'text-font': FONT, 'text-size': 12, 'text-anchor': 'left', 'text-offset': [0.9, 0], 'text-optional': true },
-        paint: { 'text-color': '#1A2744', 'text-halo-color': 'rgba(255,255,255,0.92)', 'text-halo-width': 2.2 } });
+        layout: { 'text-field': ['step', zoom, labelOn(0), 10.4, labelOn(1), 11, ['get', 'label']], 'text-font': FONT,
+                  'text-size': ['interpolate', ['linear'], zoom, 10, ['case', ['<=', ['get', 'rank'], 0], 12, 11], 14, ['case', ['<=', ['get', 'rank'], 0], 14, 12.5]],
+                  'text-variable-anchor': ['left', 'right', 'top', 'bottom', 'top-left', 'bottom-right'], 'text-radial-offset': 0.95, 'text-justify': 'auto',
+                  'symbol-sort-key': ['get', 'rank'], 'text-padding': 3, 'text-max-width': 9 },
+        paint: { 'text-color': darkLabels ? '#E6ECF5' : '#1A2744', 'text-halo-color': darkLabels ? (dg ? A.DIAGRAM.dark.bg : '#0B1628') : 'rgba(255,255,255,0.92)', 'text-halo-width': 2.2 } });
 
       // a journey: walks dotted, rides bold along the real route
       m.addLayer({ id: 'jny-walk', type: 'line', source: 'jny', filter: ['==', ['get', 'k'], 'walk'], layout: { 'line-cap': 'round', 'line-join': 'round' },
@@ -243,10 +321,11 @@
 
       // the crowd of vehicles
       const big = ['==', ['get', 'k'], 'train'];
-      const iconic = ['match', ['get', 'k'], ['bus', 'train'], true, false];
+      const plain = ['!', ['has', 'pin']];
+      const iconic = ['all', plain, ['match', ['get', 'k'], ['bus', 'train'], true, false]];
       m.addLayer({ id: 'crowd-sel', type: 'circle', source: 'crowd', filter: ['==', ['get', 'id'], ''],
         paint: { 'circle-color': ['get', 'c'], 'circle-opacity': 0.3, 'circle-radius': 18 } });
-      m.addLayer({ id: 'crowd-dots', type: 'circle', source: 'crowd',
+      m.addLayer({ id: 'crowd-dots', type: 'circle', source: 'crowd', filter: plain,
         paint: {
           'circle-color': ['get', 'c'],
           'circle-radius': ['interpolate', ['linear'], zoom, 9, ['case', big, 4, 2.4], 11, ['case', big, 5, 3.4], 13, ['case', big, 7, 5], 15, ['case', big, 9, 7.5]],
@@ -254,7 +333,7 @@
           'circle-opacity': ['step', zoom, 1, 14.6, ['case', iconic, 0, 1]],
           'circle-stroke-opacity': ['step', zoom, 1, 14.6, ['case', iconic, 0, 1]],
         } });
-      m.addLayer({ id: 'crowd-arrows', type: 'symbol', source: 'crowd', minzoom: 12, filter: ['has', 'b'],
+      m.addLayer({ id: 'crowd-arrows', type: 'symbol', source: 'crowd', minzoom: 12, filter: ['all', plain, ['has', 'b']],
         layout: { 'icon-image': 'akl-arrow', 'icon-rotate': ['get', 'b'], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true, 'icon-ignore-placement': true,
                   'icon-size': ['interpolate', ['linear'], zoom, 12, 0.6, 15, ['case', big, 1.2, 1]] },
         paint: { 'icon-opacity': ['step', zoom, 1, 14.6, ['case', iconic, 0, 1]] } });
@@ -262,6 +341,18 @@
         layout: { 'icon-image': ['case', big, ['concat', 'train-', ['coalesce', ['get', 'li'], 'x']], ['concat', 'bus-', ['get', 'op']]],
                   'icon-rotate': ['coalesce', ['get', 'b'], 0], 'icon-rotation-alignment': 'map', 'icon-pitch-alignment': 'map',
                   'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-size': ['interpolate', ['linear'], zoom, 14.6, 0.75, 18, 1.6] } });
+      const pinSize = ['interpolate', ['linear'], zoom, 9, 0.72, 11.5, 0.95, 14, 1.2, 17, 1.5];
+      const pinImg = (kind) => ['concat', kind, ['coalesce', ['get', 'li'], 'x']];
+      m.addLayer({ id: 'crowd-tips', type: 'symbol', source: 'crowd', filter: ['all', ['has', 'pin'], ['has', 'b']],
+        layout: { 'icon-image': pinImg('ttip-'), 'icon-rotate': ['get', 'b'], 'icon-rotation-alignment': 'map', 'icon-pitch-alignment': 'map',
+                  'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-size': pinSize } });
+      m.addLayer({ id: 'crowd-pins', type: 'symbol', source: 'crowd', filter: ['has', 'pin'],
+        layout: { 'icon-image': pinImg('tdot-'), 'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-size': pinSize,
+                  'symbol-sort-key': ['coalesce', ['get', 'late'], 0] } });
+      m.addLayer({ id: 'crowd-late', type: 'circle', source: 'crowd', filter: ['all', ['has', 'pin'], ['has', 'late']],
+        paint: { 'circle-color': ['case', ['>=', ['get', 'late'], 5], '#E0412F', '#EFA20E'], 'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 1.4,
+                 'circle-radius': ['interpolate', ['linear'], zoom, 9, 2.6, 14, 3.8],
+                 'circle-translate': ['interpolate', ['linear'], zoom, 9, ['literal', [5.3, -5.3]], 11.5, ['literal', [7, -7]], 14, ['literal', [8.8, -8.8]], 17, ['literal', [11, -11]]] } });
       m.addLayer({ id: 'crowd-labels', type: 'symbol', source: 'crowd', minzoom: 13.2, filter: ['has', 'r'],
         layout: { 'text-field': ['get', 'r'], 'text-font': FONT, 'text-size': 11.5, 'text-anchor': 'bottom', 'text-offset': [0, -1.1], 'text-optional': true, 'text-padding': 1 },
         paint: { 'text-color': '#FFFFFF', 'text-halo-color': '#0B1628', 'text-halo-width': 1.8 } });
@@ -269,6 +360,7 @@
       this.ready = true;
       this._terrain();
       this.setLines(this.data.lines);
+      this.setLinks(this.data.links);
       this.setStops(this.data.stops);
       this._pushAllStops();
       this._pushJourney();
@@ -292,7 +384,7 @@
       if (src) src.setData(this.data.allStops);
     }
 
-    /** [{ coords: [[lon, lat], ...] | [[[lon, lat]...], ...], color, width, offset }] */
+    /** [{ coords: [[lon, lat], ...] | [[[lon, lat]...], ...], color, width, offset, z (grows with zoom) }] */
     setLines(lines) {
       this.data.lines = lines;
       const src = this.ready && this.map.getSource('akl-lines');
@@ -300,18 +392,28 @@
       src.setData({ type: 'FeatureCollection', features: lines.map((l) => ({
         type: 'Feature',
         geometry: Array.isArray(l.coords[0][0]) ? { type: 'MultiLineString', coordinates: l.coords } : { type: 'LineString', coordinates: l.coords },
-        properties: { color: l.color, width: l.width || 4, offset: l.offset || 0 },
+        properties: { color: l.color, width: l.width || 4, offset: l.offset || 0, z: !!l.z },
       })) });
     }
 
-    /** [{ lon, lat, color, big, label, id }] */
+    /** Bars joining a station's platforms: [{ coords: [[lon, lat], ...], color }] */
+    setLinks(links) {
+      this.data.links = links || [];
+      const src = this.ready && this.map.getSource('akl-links');
+      if (!src) return;
+      src.setData({ type: 'FeatureCollection', features: this.data.links.map((l) => ({
+        type: 'Feature', geometry: { type: 'LineString', coordinates: l.coords }, properties: { color: l.color },
+      })) });
+    }
+
+    /** [{ lon, lat, color, big, label, id, r (size), rank (0 = label first) }] */
     setStops(stops) {
       this.data.stops = stops;
       const src = this.ready && this.map.getSource('akl-stops');
       if (!src) return;
       src.setData({ type: 'FeatureCollection', features: stops.map((s) => ({
         type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] },
-        properties: Object.assign({ color: s.color, big: !!s.big, id: s.id != null ? String(s.id) : '' }, s.label ? { label: s.label } : {}),
+        properties: Object.assign({ color: s.color, big: !!s.big, id: s.id != null ? String(s.id) : '', r: s.r || 1, rank: s.rank || 0 }, s.label ? { label: s.label } : {}),
       })) });
     }
 
@@ -358,7 +460,7 @@
       src.setData({ type: 'FeatureCollection', features: f });
     }
 
-    /** The crowd: [{ id, lon, lat, bearing, color, op, kind: bus|train|ferry, label, li }]. Glides to new fixes. */
+    /** The crowd: [{ id, lon, lat, bearing, color, op, kind: bus|train|ferry, label, li, pin, late (min) }]. Glides to new fixes. */
     setCrowd(list) {
       const now = performance.now();
       const seen = new Set();
@@ -392,6 +494,8 @@
         if (d.bearing != null) p.b = d.bearing;
         if (d.label) p.r = d.label;
         if (d.li != null && d.li >= 0) p.li = String(d.li);
+        if (d.pin) p.pin = 1;
+        if (d.late) p.late = d.late;
         return { type: 'Feature', geometry: { type: 'Point', coordinates: [x, y] }, properties: p };
       }) });
     }
@@ -490,7 +594,7 @@
 
     _events() {
       const m = this.map;
-      const pickable = () => ['crowd-icons', 'crowd-dots', 'akl-stops', 'allstops', 'jny-stop'].filter((l) => m.getLayer(l));
+      const pickable = () => ['crowd-pins', 'crowd-icons', 'crowd-dots', 'akl-stops', 'allstops', 'jny-stop'].filter((l) => m.getLayer(l));
       const nearest = (pt) => {
         const r = 10;
         const hits = this.ready ? m.queryRenderedFeatures([[pt.x - r, pt.y - r], [pt.x + r, pt.y + r]], { layers: pickable() }) : [];

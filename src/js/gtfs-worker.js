@@ -26,6 +26,7 @@ self.onmessage = async (e) => {
       case 'route': result = routeInfo(m.short); break;
       case 'trip': result = tripInfo(m.tripId); break;
       case 'routesList': result = routesList(); break;
+      case 'railTrack': result = railTrack(m.segs); break;
       default: throw new Error('unknown request ' + m.type);
     }
     post({ type: 'result', id: m.id, result });
@@ -840,6 +841,87 @@ function routeInfo(short) {
   }
   const r = N.patRoute[pats[0]];
   return { short: N.routeShort[r], long: N.routeLong[r], type: N.routeType[r], agency: N.routeAgency[r], trips, first, last, dirs, lines };
+}
+
+/**
+ * The real track between each pair of neighbouring stations, cut from the
+ * shapes the trains run today. segs: [{ line: "E-W", lon0, lat0, lon1, lat1 }].
+ * A shape can pass a station twice (the CRL loop), so every close pass is tried
+ * and the pair that makes the shortest stretch wins. The result runs lon0 → lon1.
+ */
+function railTrack(segs) {
+  if (!N) return null;
+  const K = Math.cos(36.9 * toRad), M = 111320;
+  const shapes = new Map();                    // line -> [{ x: Float64Array, y, cum }]
+  for (let p = 0; p < N.patRoute.length; p++) {
+    const r = N.patRoute[p];
+    if (N.routeType[r] !== 2) continue;
+    const id = N.routeId[r], line = id.lastIndexOf('-') > 0 ? id.slice(0, id.lastIndexOf('-')) : id;
+    const si = N.tripShapeIdx[N.patTrip[N.patTripStart[p]]];
+    if (si < 0) continue;
+    const list = shapes.get(line) || [];
+    if (list.some((o) => o.si === si)) continue;
+    const xs = [], ys = [];
+    for (let i = N.shapeStart[si]; i < N.shapeStart[si + 1]; i++) {
+      const x = N.shapeXY[i * 2], y = N.shapeXY[i * 2 + 1];
+      if (xs.length && xs[xs.length - 1] === x && ys[ys.length - 1] === y) continue;   // repeated points
+      xs.push(x); ys.push(y);
+    }
+    const cum = new Float64Array(xs.length);
+    for (let i = 1; i < xs.length; i++) cum[i] = cum[i - 1] + Math.hypot((xs[i] - xs[i - 1]) * K, ys[i] - ys[i - 1]) * M;
+    list.push({ si, xs, ys, cum });
+    shapes.set(line, list);
+  }
+  const passes = (o, lon, lat) => {            // the closest point of each pass within 400 m
+    const out = [];
+    let prev = Infinity;
+    const d = (i) => Math.hypot((o.xs[i] - lon) * K, o.ys[i] - lat) * M;
+    for (let i = 0, di = d(0); i < o.xs.length; i++) {
+      const next = i + 1 < o.xs.length ? d(i + 1) : Infinity;
+      if (di < 400 && di < prev && di <= next) out.push([i, di]);
+      prev = di; di = next;
+    }
+    return out;
+  };
+  return segs.map((g) => {
+    let best = null;
+    for (const o of shapes.get(g.line) || []) {
+      const pa = passes(o, g.lon0, g.lat0), pb = passes(o, g.lon1, g.lat1);
+      for (const [i, da] of pa) for (const [j, db] of pb) {
+        // prefer a shape that runs from the first station to the second, so lines that
+        // share rails are cut from the same track (not one from each direction's)
+        const cost = Math.abs(o.cum[j] - o.cum[i]) + 2 * (da + db) + (i > j ? 60 : 0);
+        if (i !== j && (!best || cost < best.cost)) best = { cost, o, i, j };
+      }
+    }
+    if (!best) return null;
+    const { o, i, j } = best, out = [];
+    const step = i < j ? 1 : -1;
+    for (let k = i; k !== j + step; k += step) out.push([o.xs[k], o.ys[k]]);
+    // AT's points are every 2 m or so and wobble a little, which makes lines drawn
+    // side by side ragged: keep only the points that matter (within 1.5 m)
+    return simplify(out, 1.5 / M, K).map((p) => [+p[0].toFixed(6), +p[1].toFixed(6)]);
+  });
+}
+
+/** Douglas-Peucker, in degrees of latitude (lon scaled by k). */
+function simplify(pts, tol, k) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length);
+  keep[0] = keep[pts.length - 1] = 1;
+  const stack = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop();
+    const ax = pts[a][0] * k, ay = pts[a][1], dx = pts[b][0] * k - ax, dy = pts[b][1] - ay, l = Math.hypot(dx, dy);
+    let far = -1, fd = tol;
+    for (let i = a + 1; i < b; i++) {
+      const px = pts[i][0] * k - ax, py = pts[i][1] - ay;
+      const d = l ? Math.abs(px * dy - py * dx) / l : Math.hypot(px, py);
+      if (d > fd) { fd = d; far = i; }
+    }
+    if (far >= 0) { keep[far] = 1; stack.push([a, far], [far, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
 }
 
 /** A trip's stops and times (static), and its whole shape. */
