@@ -4,7 +4,7 @@
   'use strict';
   const esc = A.esc, T = A.time, NET = A.NET;
   const V = {};
-  let root, map, filter = 'all', query = '', selected = null, trip = null, fitTimer = null;
+  let root, map, filter = 'all', query = '', selected = null, trip = null, fitTimer = null, stat = null, routeShown = null;
 
   V.mount = function (el) {
     root = el;
@@ -26,12 +26,12 @@
         <div class="tip" id="l-tip" hidden></div>
       </div>`;
     const q = A.$('#l-q', root);
-    q.addEventListener('input', () => { query = q.value; A.$('#l-clear', root).hidden = !query; render(); scheduleFit(); });
+    q.addEventListener('input', () => { query = q.value; A.$('#l-clear', root).hidden = !query; if (routeShown && routeShown.short.toLowerCase() !== query.trim().toLowerCase()) clearRoute(); render(); scheduleFit(); });
     q.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { q.value = ''; query = ''; A.$('#l-clear', root).hidden = true; render(); scheduleFit(); q.blur(); }
       if (e.key === 'Enter') { const first = shown()[0]; if (first) pick(first.v.id, true); }
     });
-    A.$('#l-clear', root).onclick = () => { q.value = ''; query = ''; A.$('#l-clear', root).hidden = true; render(); scheduleFit(); };
+    A.$('#l-clear', root).onclick = () => { q.value = ''; query = ''; A.$('#l-clear', root).hidden = true; clearRoute(); render(); scheduleFit(); };
     A.$$('#l-basemap button', root).forEach((b) => { b.onclick = () => A.settings.set('basemap', b.dataset.b); });
     A.on('live', () => { render(); if (selected) renderCard(); });
     A.on('settings', (k) => { if (k === 'basemap' || k === '*') syncBasemap(); if (k === 'liveTrains') render(); });
@@ -42,7 +42,9 @@
     A.need('live', true);
     if (!map) {
       map = new A.MapView(A.$('#l-map', root), {
-        onPick: (p) => { if (p.kind === 'vehicle') pick(p.id); },
+        allStops: true,
+        onPick: (p) => { if (p.kind === 'vehicle') pick(p.id); else if (p.kind === 'anystop') { A.show('stops'); A.views.stops.open(p.id); } },
+        onContext: (ll) => { A.show('stops'); A.views.stops.near(ll.lat, ll.lng); },
         onBackground: () => pick(null),
         onHover: hover,
         onUnfollow: () => renderCard(),
@@ -60,6 +62,27 @@
   };
   /** Show one vehicle (from elsewhere in the app). */
   V.focus = function (id) { pick(id, true); };
+  /** Search from elsewhere (the Ctrl+K box). */
+  V.search = function (q) {
+    const inp = A.$('#l-q', root);
+    inp.value = q; query = q; A.$('#l-clear', root).hidden = !q;
+    render(); scheduleFit();
+  };
+  /** Show one route: its path each way, its stops, and every vehicle on it. */
+  V.route = async function (short) {
+    V.search(short);
+    const r = await A.gtfs.route(short);
+    if (!r || !map) return;
+    routeShown = r;
+    const color = r.type === 2 ? (A.NET.lineColors[A.NET.lineIds.indexOf(r.short)] || A.MODE_COLOR.train) : r.type === 4 ? A.MODE_COLOR.ferry : A.MODE_COLOR.bus;
+    map.setLines(r.lines.map((c) => ({ coords: c, color, width: 4.5 })));
+    const seen = new Set();
+    map.setStops(r.dirs.flatMap((d) => d.stops).filter((s) => !seen.has(s.id) && seen.add(s.id)).map((s) => ({ lon: s.lon, lat: s.lat, color, id: '' })));
+    map.fit(r.lines.flat(), { top: 60, bottom: 60, left: 400, right: 60 }, 15);
+    render();
+  };
+
+  function clearRoute() { routeShown = null; if (map) { map.setLines([]); map.setStops([]); } }
 
   function syncBasemap() {
     const b = A.settings.get('basemap');
@@ -136,7 +159,7 @@
                                       op: b.info.code, kind: 'bus', label: b.route }));
     if (withTrains()) {
       L.trains.filter((t) => t.line >= 0).forEach((t) => crowd.push({ id: t.v.id, lon: t.v.lon, lat: t.v.lat, bearing: t.v.bearing,
-        color: NET.lineColors[t.line], kind: 'train', label: NET.lineIds[t.line] }));
+        color: NET.lineColors[t.line], kind: 'train', label: NET.lineIds[t.line], li: t.line }));
       L.ferries.forEach((f) => crowd.push({ id: f.v.id, lon: f.v.lon, lat: f.v.lat, bearing: f.v.bearing, color: '#FFFFFF', kind: 'ferry', label: f.name }));
     }
     map.setCrowd(crowd);
@@ -168,13 +191,15 @@
 
   function pick(id, fly) {
     selected = id;
-    trip = null;
+    trip = null; stat = null;
     if (map) { map.select(id); map.follow = false; }
     const x = id && find(id);
     if (x && fly && map) map.flyTo(x.v.lon, x.v.lat, 15);
     if (x && x.v.tripId) {
-      A.live.trip(x.v.tripId).then((d) => { if (selected === id) { trip = d; renderCard(); } }).catch(() => {});
+      A.live.trip(x.v.tripId).then((d) => { if (selected === id) { trip = d; renderCard(); drawTrip(); } }).catch(() => {});
+      A.gtfs.trip(x.v.tripId).then((d) => { if (selected === id) { stat = d; renderCard(); drawTrip(); } }).catch(() => {});
     }
+    if (!id && map && !routeShown) { map.setLines([]); map.setStops([]); }
     A.$$('.res-row', root).forEach((r) => r.classList.toggle('on', r.dataset.id === id));
     renderCard();
   }
@@ -197,6 +222,7 @@
       <div class="chips">${v.tripId ? A.chip(trip && trip.delay != null ? p.text : 'Timing unknown', trip && trip.delay != null ? p.cls : 'sched') : ''}
         ${A.chip(v.speedKmh == null ? 'Speed unknown' : v.speedKmh < 2 ? 'Stopped' : Math.round(v.speedKmh) + ' km/h', 'blue')}
         ${occ ? A.chip(occ, 'sched') : ''}<span class="seen">seen <span data-since="${v.timestamp}">${A.ago(now - v.timestamp)}</span></span></div>
+      ${nextStopsHtml()}
       <div class="vc-tools"><button class="btn${map && map.follow ? ' on' : ''}" id="vc-follow">${A.icon('follow', 16)} ${map && map.follow ? 'Following' : 'Follow'}</button>
         <button class="btn" id="vc-zoom">Zoom to it</button></div>`;
     card.hidden = false;
@@ -210,6 +236,33 @@
     };
   }
   function updateCardTimes() { /* data-since ticks on its own */ }
+
+  /** Where this vehicle is going: the rest of its route and its next stops. */
+  function upcoming() {
+    if (!stat) return [];
+    const day = A.gtfsState.dayStart;
+    const passed = trip && trip.seq != null ? trip.seq : null;
+    const delay = trip && trip.delay != null ? trip.delay : 0;
+    const now = T.now();
+    return stat.stops.filter((s) => (passed != null ? s.seq > passed : day + s.arr + delay > now - 30)).map((s) => Object.assign({}, s, { eta: day + s.arr + delay }));
+  }
+  function drawTrip() {
+    if (!map || !stat || routeShown) return;
+    const x = find(selected);
+    const color = x && x.kind === 'train' ? NET.lineColors[x.t.line] : x && x.kind === 'bus' ? A.fleet.color(x.b.info.code) : A.MODE_COLOR.ferry;
+    const next = upcoming();
+    map.setLines([{ coords: stat.shape, color, width: 5 }]);
+    map.setStops(next.map((s, i) => ({ lon: s.lon, lat: s.lat, color, big: i === next.length - 1, label: i === next.length - 1 ? s.name : undefined, id: '' })));
+  }
+
+  function nextStopsHtml() {
+    const next = upcoming();
+    if (!next.length) return '';
+    const shown = next.slice(0, 5);
+    return `<div class="next-stops"><div class="list-head">Next stops</div>${shown.map((s) =>
+      `<div class="ns-row"><i></i><span>${esc(s.name)}</span><b>${T.clock(s.eta)}</b><em data-exp="${s.eta}">${A.countdown(s.eta - T.now())}</em></div>`).join('')}` +
+      `${next.length > 5 ? `<div class="ns-more">…then ${next.length - 5} more to ${esc(next[next.length - 1].name)}</div>` : ''}</div>`;
+  }
 
   function hover(f, pt) {
     const tip = A.$('#l-tip', root);

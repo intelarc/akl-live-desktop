@@ -2,6 +2,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('desktop', {
+  flags: ipcRenderer.sendSync('app:flags'),
+  gtfsInfo: () => ipcRenderer.invoke('gtfs:info'),
+  gtfsZip: () => ipcRenderer.invoke('gtfs:zip'),
   setTray: (t) => ipcRenderer.send('tray:update', t),
   notify: (title, body) => ipcRenderer.send('notify', { title, body }),
   getDesktopSettings: () => ipcRenderer.invoke('settings:get'),

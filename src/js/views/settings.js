@@ -39,6 +39,17 @@
             <button class="btn primary" id="s-save">Save stops</button>
           </section>
 
+          <section class="card"><h2>Saved places</h2>
+            <p class="help">For directions: pick them from the list or type an address, a place or a stop.</p>
+            ${['home', 'work'].map((k) => {
+              const p = k === 'home' ? A.settings.get('home') : A.settings.get('work');
+              return `<div class="field place-field"><span>${k === 'home' ? '🏠 Home' : '💼 Work'}</span>
+                <div class="pf-row"><input id="s-${k}" value="${esc(p ? p.name : '')}" placeholder="${k === 'home' ? esc((A.places.home() || {}).sub || 'Search') : 'Search an address or place'}" autocomplete="off">
+                ${p ? `<button class="btn small" data-clear="${k}">Clear</button>` : ''}</div><div class="suggest" id="s-${k}-sug" hidden></div>
+                ${p ? `<small>${esc(p.sub || '')}</small>` : k === 'home' ? '<small>Until you set one, home is your first bus stop.</small>' : ''}</div>`;
+            }).join('')}
+          </section>
+
           <section class="card"><h2>Alerts</h2>
             <p class="help">A Windows notification before each bus, so you know when to head out. Turn it on per direction with the bell on its card, or here.</p>
             ${A.state.boards.map((b) => toggle('s-alert-' + b.code, !!alerts[b.code], `${esc(A.settings.get('route'))} to ${esc(b.headsign || b.code)}`, `${esc(b.name || '')} · stop ${esc(b.code)}`)).join('')}
@@ -83,6 +94,14 @@
 
   function wire() {
     const S = A.settings;
+    for (const k of ['home', 'work']) {
+      A.placeInput(A.$('#s-' + k, root), A.$('#s-' + k + '-sug', root), (p) => {
+        S.set(k, { name: p.name, sub: p.sub, lat: p.lat, lon: p.lon, type: k, code: p.code, id: p.id });
+        A.toast(`${k === 'home' ? 'Home' : 'Work'} saved`);
+        render();
+      });
+    }
+    A.$$('[data-clear]', root).forEach((b) => { b.onclick = () => { S.set(b.dataset.clear, null); render(); }; });
     A.$('#s-save', root).onclick = () => {
       const stops = A.$('#s-stops', root).value.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
       if (!stops.length) { A.toast('Add at least one stop number'); return; }

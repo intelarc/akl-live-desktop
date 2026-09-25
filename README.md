@@ -1,7 +1,8 @@
 # AKL Live for Windows
 
 The desktop version of [AKL Live](https://github.com/intelarc/akl-live-android):
-live Auckland buses and trains, with the AT API key built in. Private.
+live Auckland buses, trains and ferries, a journey planner, and detailed 3D
+maps, with the AT API key built in. Private.
 
 ## Install
 
@@ -12,42 +13,92 @@ Running a newer installer updates it in place and keeps your settings.
 
 ## What's in it
 
+- **Directions** (Ctrl+D). Plan any trip across Auckland by bus, train and ferry,
+  like the AT app's journey planner, but running on this computer.
+  - From and To take saved places (Home, Work), recent places, any stop or
+    station, or any address or landmark. You can also right-click the map or
+    pick a point on it.
+  - Leave now, depart at, or arrive by, today or tomorrow. Options for how far
+    you'll walk, how fast, how many changes, and bus, train or ferry.
+  - Options are tagged Fastest, Least walking and Fewest changes. Each one
+    shows its legs, when to leave, the first ride's live delay and how many
+    stops away it is, and any alerts along the way.
+  - The step-by-step view has turn-by-turn walking directions and every stop
+    with its time. For each ride it shows live delays (with the timetabled time
+    crossed out), which bus it is (model, operator, fleet number, how full),
+    and where it is now. The map draws the whole journey along the real
+    route, and tracks your bus live.
+  - **Remind me to leave** sends a Windows alert a minute before you need to
+    head out. **Copy directions** puts the trip on the clipboard.
+- **Stops.** Search any stop, station or wharf by name or number, or click one
+  on the map.
+  - Live departures on every route (a station shows all its platforms), with
+    delays, stops away, the model and how full each one is.
+  - Approaching buses on the map, alerts at that stop, favourites, stops near
+    home or anywhere you right-click, and "add to Buses".
 - **Buses.** The 27H at Aldersgate Road, both ways, each with a live scene:
   the bus drives in as it counts down, under Auckland's real sky and weather.
-  - Next bus in detail: live or scheduled, minutes late, which model it is,
-    the stops between it and you, how far away it is, its speed and how full.
-  - "Leave in 3 min" from your walking time, the next five buses, and the rest
-    of today's timetable.
-  - A live satellite map of the whole route, and the weather for the next six
-    hours.
-- **Trains.** The post-CRL network diagram with every train gliding live.
-  - Scroll to zoom and drag to pan. Hover for names; click a train for its
-    next stops, or a station for live departures from every platform.
-  - Line filters, and a Satellite or Map view of every train at its real GPS
-    position.
-- **Live.** Every bus in Auckland (about a thousand at once) on one map,
-  coloured by operator. Trains and ferries can be added too.
-  - Search by route, fleet number or model, and filter by operator, electric
-    or double-decker.
-  - Click a bus for its route, destination, delay, speed, load and model, then
-    **Follow** it around town.
-- **Fleet.** Every model on the road and how many are out right now, plus each
-  operator's fleet at a glance.
-  - Each model has a page: specs, history, fleet numbers, and a live map and
-    list of every one of them.
+  - Next bus in detail, "leave in 3 min" (or which bus you can still catch),
+    the next five buses, and the rest of today's timetable.
+  - A live route map, the weather for the next six hours, and alerts affecting
+    your route or stops at the top.
+- **Trains.** The post-CRL network diagram with every train moving live.
+  Click a train for its next stops, or a station for departures from every
+  platform. Satellite or Map views show every train at its real GPS position.
+- **Live.** Every bus in Auckland on one map (about 1,200 at rush hour), plus
+  trains and ferries if you like.
+  - Search by route, fleet number or model. Showing a route draws its path
+    each way and its stops.
+  - Click a vehicle for its destination, delay, speed, load and model, the
+    rest of its route with its next stops and times, and **Follow** it.
+- **Fleet.** Every bus model on the road and how many are out, each with its
+  own page and live map.
+- **Alerts.** Every current and upcoming disruption: detours, moved stops, no
+  service. Yours come first, with a badge in the sidebar.
+- **Maps, in detail.**
+  - Satellite photos (Esri, or LINZ's 7.5 cm aerials with a free key) with
+    roads, street names, suburbs, places and 3D buildings drawn over them,
+    or OpenFreeMap's street map with hillshading.
+  - **3D** tilts the map over real terrain with a sky. Right-drag to rotate
+    and tilt.
+  - All 5,800 stops appear as you zoom in; click one for its departures.
+- **Search everything** (Ctrl+K): places and addresses (for directions),
+  stops (for departures), routes (on the live map), fleet numbers, bus models,
+  screens and actions.
 - **Desktop extras.**
-  - A tray icon with the countdown, and Windows alerts before your bus (the
-    bell on each direction).
-  - An always-on-top **desk board** (Ctrl+M) styled after the ESP32 one.
-  - Start with Windows, close to the tray, light/dark following Windows, and
-    keyboard shortcuts (Ctrl+1–5, Ctrl+R, Ctrl+F, F11).
+  - A tray icon with the countdown, and Windows alerts before your bus.
+  - An always-on-top **desk board** (Ctrl+M), and taskbar right-click
+    shortcuts.
+  - Windows 11 Mica, start with Windows, close to the tray, light/dark
+    following Windows.
+  - Keyboard shortcuts: Ctrl+1–8, Ctrl+K, Ctrl+D, Ctrl+F, Ctrl+R, F11.
 
 ## How it's built
 
-Electron around plain web pages in `src/` (no framework, no bundler). Maps are
-MapLibre GL (`src/vendor`, v5, BSD-3), with Esri World Imagery or LINZ aerials,
-and OpenFreeMap streets. Data comes straight from the AT developer API and
-Open-Meteo, the same way the Android app gets it.
+Electron around plain web pages in `src/` (no framework, no bundler).
+
+- **The journey planner** is our own: `src/js/gtfs-worker.js` runs in a Web
+  Worker.
+  - It reads AT's full timetable (`gtfs.zip`, about 29 MB). The desktop app
+    fetches it and checks for a new one every six hours.
+  - It compiles one service day (about 15,000 trips and 450,000 stop times)
+    into typed arrays. That takes about 2 seconds, and the result is cached in
+    IndexedDB, so it's instant after the first time each day. Tomorrow is
+    compiled when you first ask for it.
+  - Routing is RAPTOR (round-based public transit routing) with walking
+    transfers of up to 450 m between stops. A search takes around 10 ms, and
+    it's rerun a few times to find several departures.
+  - Live delays, vehicle positions and cancellations come from AT's realtime
+    feeds.
+- **Maps** are MapLibre GL (`src/vendor`, v5, BSD-3), using these sources:
+  - Esri World Imagery or LINZ aerials.
+  - OpenFreeMap vector tiles for streets, labels and 3D buildings (©
+    OpenStreetMap contributors).
+  - AWS / Mapzen terrain tiles.
+- **Places and walking:** [Photon](https://photon.komoot.io) for address
+  search, and [FOSSGIS OSRM](https://routing.openstreetmap.de) for walking
+  directions (both OpenStreetMap data).
+- **Alerts** come from AT's `servicealerts` feed.
 
 `src/js/data/` is generated from the Android repo: the network schematic, the
 27H's stops and the fleet list. Re-run this after changing them there:
@@ -55,8 +106,9 @@ Open-Meteo, the same way the Android app gets it.
     python tools/import_android.py
 
 `python tools/make_icon.py` redraws the icons. `python tools/dev_server.py`
-serves `src/` for trying things in a browser. That needs `src/js/keys.js`
-(gitignored), holding `window.AKL_KEYS = { at: "…" }`.
+serves `src/` for trying things in a browser, and proxies the timetable
+download. That needs `src/js/keys.js` (gitignored), holding
+`window.AKL_KEYS = { at: "…" }`.
 
 ## Building
 

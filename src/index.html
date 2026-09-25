@@ -2,12 +2,13 @@
 <html lang="en-NZ">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src blob:; child-src blob:; connect-src https://api.at.govt.nz https://api.open-meteo.com https://server.arcgisonline.com https://basemaps.linz.govt.nz https://tiles.openfreemap.org">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; child-src blob:; connect-src 'self' https://api.at.govt.nz https://api.open-meteo.com https://server.arcgisonline.com https://basemaps.linz.govt.nz https://tiles.openfreemap.org https://tiles.mapterhorn.com https://photon.komoot.io https://routing.openstreetmap.de https://s3.amazonaws.com">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AKL Live</title>
   <link rel="icon" href="assets/icon.png">
   <link rel="stylesheet" href="vendor/maplibre-gl.css">
   <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="v2.css">
 </head>
 <body>
   <script src="js/keys.js"></script>
@@ -18,12 +19,19 @@
   <script src="js/core.js"></script>
   <script src="js/api.js"></script>
   <script src="js/repos.js"></script>
+  <script src="js/gtfs.js"></script>
   <script src="js/store.js"></script>
+  <script src="js/alerts.js"></script>
+  <script src="js/places.js"></script>
   <script src="js/draw.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/trainmap.js"></script>
   <script src="js/map.js"></script>
+  <script src="js/palette.js"></script>
   <script src="js/views/buses.js"></script>
+  <script src="js/views/plan.js"></script>
+  <script src="js/views/stops.js"></script>
+  <script src="js/views/alerts.js"></script>
   <script src="js/views/trains.js"></script>
   <script src="js/views/live.js"></script>
   <script src="js/views/fleet.js"></script>

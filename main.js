@@ -1,8 +1,12 @@
 // AKL Live for Windows: the window, the tray, notifications, the desk board,
 // starting with Windows. Everything else lives in src/ (plain web pages).
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification, shell, nativeTheme, screen } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification, shell, nativeTheme, screen, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+
+// Windows 11 (build 22000+): let the window's Mica material show through the chrome
+const MICA = process.platform === 'win32' && +(os.release().split('.')[2] || 0) >= 22000;
 
 const APP_ID = 'nz.aryan.akllive.desktop';        // must match build.appId, for Windows notifications
 const hidden = process.argv.includes('--hidden');   // started with Windows: straight to the tray
@@ -28,14 +32,15 @@ function visibleOnScreen(b) {
 }
 const icon = (name) => path.join(__dirname, 'src', 'assets', name);
 const dark = () => nativeTheme.shouldUseDarkColors;
-const overlay = () => (dark() ? { color: '#0B1220', symbolColor: '#E6ECF7', height: 40 } : { color: '#EEF3FA', symbolColor: '#1A2744', height: 40 });
+const overlay = () => ({ color: MICA ? '#00000000' : dark() ? '#0B1220' : '#EEF3FA', symbolColor: dark() ? '#E6ECF7' : '#1A2744', height: 40 });
+const bgColor = () => (MICA ? '#00000000' : dark() ? '#0B1220' : '#EEF3FA');
 
 // ---------- the main window ----------
 function createMain() {
   const b = visibleOnScreen(state.bounds) ? state.bounds : { width: 1440, height: 920 };
   win = new BrowserWindow({
     ...b, minWidth: 880, minHeight: 600, show: false, title: 'AKL Live', icon: icon('icon.png'),
-    backgroundColor: dark() ? '#0B1220' : '#EEF3FA',
+    backgroundColor: bgColor(), ...(MICA ? { backgroundMaterial: 'mica' } : {}),
     titleBarStyle: 'hidden', titleBarOverlay: overlay(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true,
@@ -169,9 +174,48 @@ ipcMain.on('mini:close', () => { if (mini) mini.close(); });
 ipcMain.on('app:show', (e, view) => showMain(view));
 ipcMain.on('win:fullscreen', () => { if (win) win.setFullScreen(!win.isFullScreen()); });
 ipcMain.handle('app:version', () => app.getVersion());
+ipcMain.on('app:flags', (e) => { e.returnValue = { mica: MICA }; });
+
+// ---------- AT's timetable (gtfs.zip): checked every six hours, kept for offline ----------
+const GTFS_URL = 'https://gtfs.at.govt.nz/gtfs.zip';
+const gtfsZipPath = () => path.join(app.getPath('userData'), 'gtfs.zip');
+const gtfsMetaPath = () => path.join(app.getPath('userData'), 'gtfs.json');
+let gtfsBusy = null;
+async function gtfsInfo() {
+  if (gtfsBusy) return gtfsBusy;
+  gtfsBusy = (async () => {
+    let meta = null;
+    try { meta = JSON.parse(fs.readFileSync(gtfsMetaPath(), 'utf8')); } catch (e) { /* first run */ }
+    const have = fs.existsSync(gtfsZipPath());
+    if (have && meta && Date.now() - meta.checked < 6 * 3600 * 1000) return { etag: meta.etag };
+    try {
+      const head = await net.fetch(GTFS_URL, { method: 'HEAD' });
+      const etag = String(head.headers.get('etag') || head.headers.get('last-modified') || Date.now()).replace(/"/g, '');
+      if (!have || !meta || meta.etag !== etag) {
+        const r = await net.fetch(GTFS_URL);
+        if (!r.ok) throw new Error('AT timetable download failed: ' + r.status);
+        fs.writeFileSync(gtfsZipPath() + '.part', Buffer.from(await r.arrayBuffer()));
+        fs.renameSync(gtfsZipPath() + '.part', gtfsZipPath());
+      }
+      meta = { etag, checked: Date.now() };
+      fs.writeFileSync(gtfsMetaPath(), JSON.stringify(meta));
+      return { etag };
+    } catch (e) {
+      if (have && meta) return { etag: meta.etag };       // offline: yesterday's timetable is better than none
+      throw e;
+    }
+  })();
+  try { return await gtfsBusy; } finally { gtfsBusy = null; }
+}
+ipcMain.handle('gtfs:info', () => gtfsInfo());
+ipcMain.handle('gtfs:zip', async () => {
+  await gtfsInfo();
+  const b = fs.readFileSync(gtfsZipPath());
+  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+});
 ipcMain.on('theme:set', (e, t) => {
   nativeTheme.themeSource = ['light', 'dark'].includes(t.mode) ? t.mode : 'system';
-  if (win) { win.setTitleBarOverlay(overlay()); win.setBackgroundColor(dark() ? '#0B1220' : '#EEF3FA'); }
+  if (win) { win.setTitleBarOverlay(overlay()); win.setBackgroundColor(bgColor()); }
 });
 nativeTheme.on('updated', () => { if (win) win.setTitleBarOverlay(overlay()); });
 

@@ -102,6 +102,9 @@
     return s.split(' ').map((w) => (w.length > 3 && w === w.toUpperCase()) ? w[0] + w.slice(1).toLowerCase() : w).join(' ');
   };
 
+  /** "27H-203" -> "27H", "E-W-201" -> "E-W": the route's name, without its version. */
+  A.routeShort = (id) => { const s = String(id || ''); const i = s.lastIndexOf('-'); return i > 0 ? s.slice(0, i) : s; };
+
   A.occupancy = function (o) {
     return ['Empty', 'Plenty of seats', 'Few seats left', 'Standing room', 'Very full', 'Full',
             'Not taking passengers'][o] || null;

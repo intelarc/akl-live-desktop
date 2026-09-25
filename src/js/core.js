@@ -144,6 +144,7 @@ window.AKL = window.AKL || {};
   };
   A.applyTheme = function () {
     document.documentElement.dataset.theme = A.isDark() ? 'dark' : 'light';
+    if (A.desktop && A.desktop.flags && A.desktop.flags.mica && !document.body.classList.contains('mini')) document.documentElement.classList.add('mica');
     if (A.desktop) A.desktop.setTheme(A.settings.get('theme'), A.isDark());
     A.emit('theme', A.isDark());
   };

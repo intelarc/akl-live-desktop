@@ -31,7 +31,7 @@
       for (const e of (j && j.data) || []) {
         const a = e.attributes;
         if (!a || a.pickup_type === 1) continue;
-        const r = String(a.route_id || '').split('-')[0];
+        const r = A.routeShort(a.route_id);
         if (route && r.toLowerCase() !== route.toLowerCase()) continue;
         out.set(a.trip_id, {
           tripId: a.trip_id, route: r,
@@ -245,7 +245,7 @@
       for (const e of (j && j.response && j.response.entity) || []) {
         const v = A.parseVehicle(e);
         if (!v || isNaN(v.lat) || now - v.timestamp > 900) continue;   // parked vehicles stop reporting
-        const route = v.routeId ? v.routeId.split('-')[0] : null;
+        const route = v.routeId ? A.routeShort(v.routeId) : null;
         if (v.id.startsWith('59')) {
           const code = v.routeId ? v.routeId.slice(0, v.routeId.lastIndexOf('-')) : null;
           trains.push({ v, line: NET.lineIds.indexOf(code), route });
@@ -265,9 +265,9 @@
         head = t && t.data && t.data.attributes && A.cleanHeadsign(t.data.attributes.trip_headsign);
         if (head) headsigns[tripId] = head;
       }
-      let delay = null;
-      try { const u = (await A.tripUpdates([tripId]))[tripId]; delay = u ? u.delay : null; } catch (e) { /* fine */ }
-      return { tripId, headsign: head || null, delay };
+      let delay = null, seq = null;
+      try { const u = (await A.tripUpdates([tripId]))[tripId]; if (u) { delay = u.delay; seq = u.seq; } } catch (e) { /* fine */ }
+      return { tripId, headsign: head || null, delay, seq };
     },
   };
 })(window.AKL);

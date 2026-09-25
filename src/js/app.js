@@ -3,7 +3,8 @@
   'use strict';
   const esc = A.esc, T = A.time;
   const VIEWS = [
-    ['buses', 'Buses'], ['trains', 'Trains'], ['live', 'Live'], ['fleet', 'Fleet'], ['settings', 'Settings'],
+    ['buses', 'Buses'], ['plan', 'Directions'], ['stops', 'Stops'], ['trains', 'Trains'], ['live', 'Live'],
+    ['fleet', 'Fleet'], ['alerts', 'Alerts'], ['settings', 'Settings'],
   ];
   const mounted = {};
   let current = null;
@@ -13,7 +14,8 @@
       <div id="titlebar"><img src="assets/icon.png" alt=""><span>AKL Live</span><span id="tb-next"></span></div>
       <div id="shell">
         <nav id="side">
-          ${VIEWS.map(([id, label], i) => `<button class="nav" data-view="${id}" title="${label} (Ctrl+${i + 1})">${A.icon(id, 22)}<span>${label}</span></button>`).join('')}
+          <button class="nav search-nav" id="open-palette" title="Search everything (Ctrl+K)">${A.icon('search', 20)}<span>Search</span><kbd>Ctrl K</kbd></button>
+          ${VIEWS.map(([id, label], i) => `<button class="nav" data-view="${id}" title="${label} (Ctrl+${i + 1})">${A.icon(id, 22)}<span>${label}</span>${id === 'alerts' ? '<b class="badge" id="alert-badge" hidden></b>' : ''}</button>`).join('')}
           <div class="side-next" id="side-next"></div>
           ${A.desktop ? `<button class="nav mini-btn" id="open-mini" title="Desk board (Ctrl+M)">${A.icon('board', 20)}<span>Desk board</span></button>` : ''}
         </nav>
@@ -21,6 +23,7 @@
       </div>
       <div id="toast"></div>`;
     A.$$('#side .nav[data-view]').forEach((b) => { b.onclick = () => show(b.dataset.view); });
+    A.$('#open-palette').onclick = () => A.palette.open();
     const mini = A.$('#open-mini');
     if (mini) mini.onclick = () => A.desktop.openMini();
     document.body.classList.toggle('desktop', !!A.desktop);
@@ -58,7 +61,9 @@
 
   function keys(e) {
     const inField = /input|textarea|select/i.test(document.activeElement.tagName);
-    if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '5') { e.preventDefault(); show(VIEWS[+e.key - 1][0]); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if (A.palette.isOpen()) A.palette.close(); else A.palette.open(); return; }
+    if (A.palette.isOpen()) return;
+    if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= String(VIEWS.length)) { e.preventDefault(); show(VIEWS[+e.key - 1][0]); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r') {
       e.preventDefault();
       A.refresh('buses'); A.refresh('trains'); A.refresh('live');
@@ -66,6 +71,7 @@
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f' && current !== 'live') { e.preventDefault(); show('live'); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); show('plan'); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm' && A.desktop) { e.preventDefault(); A.desktop.openMini(); return; }
     if (e.key === 'F11' && A.desktop) { e.preventDefault(); A.desktop.toggleFullscreen(); return; }
     if (inField && e.key !== 'Escape' && !(e.ctrlKey || e.metaKey)) return;
@@ -81,6 +87,14 @@
     document.addEventListener('keydown', keys);
     if (A.desktop) A.desktop.onNavigate((v) => show(v));
     A.start();
+    A.gtfs.start();
+    A.alerts.refresh();
+    setInterval(() => { if (!document.hidden) A.alerts.refresh(); }, 5 * 60000);
+    A.on('alerts', () => {
+      const n = A.alerts.mine().length;
+      const b = A.$('#alert-badge');
+      b.hidden = !n; b.textContent = n;
+    });
     show(A.settings.get('view'));
     renderNext();
     if (!A.api.key()) { show('settings'); A.toast('Add your AT API key to get started'); }

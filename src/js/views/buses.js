@@ -20,6 +20,7 @@
           </div>
         </header>
         <div class="banner error" id="b-error" hidden></div>
+        <div id="b-alerts"></div>
         <div class="pills" id="b-pills"></div>
         <div class="lanes" id="b-lanes"></div>
         <section class="card map-card" id="b-mapcard">
@@ -48,6 +49,7 @@
     A.$$('#b-basemap button', root).forEach((b) => { b.onclick = () => A.settings.set('basemap', b.dataset.b); });
     A.on('buses', render);
     A.on('weather', renderWeather);
+    A.on('alerts', renderAlerts);
     A.on('tick', renderClock);
     A.on('settings', (k) => {
       if (k === 'basemap' || k === '*') { syncBasemap(); }
@@ -78,6 +80,16 @@
     const b = A.settings.get('basemap');
     A.$$('#b-basemap button', root).forEach((x) => x.classList.toggle('on', x.dataset.b === b));
     if (map) map.setBasemap(b);
+  }
+
+  /** Disruptions on your route or at your stops, right up top. */
+  function renderAlerts() {
+    const el = A.$('#b-alerts', root);
+    if (!el) return;
+    const mine = A.alerts.mine();
+    el.innerHTML = mine.slice(0, 2).map((a) => `<div class="buses-alert" data-go="alerts"><span class="chip ${a.cls}">${esc(a.label)}</span>` +
+      `<span>${esc(a.header)}</span><small>${esc(A.alerts.when(a))}</small></div>`).join('');
+    A.$$('[data-go]', el).forEach((b) => { b.onclick = () => A.show('alerts'); });
   }
 
   function renderClock(now) {
