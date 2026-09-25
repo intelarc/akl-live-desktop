@@ -310,8 +310,9 @@
     });
 
     // 3. draw: every run of every line in its slot, along the reference line's track
-    const out = [], track = [[], [], []], ends = STATIONS.map(() => []);
+    const out = [], track = [[], [], []], ends = STATIONS.map(() => []), termini = [];
     infos.forEach(({ g, info, runs }, gi) => {
+      const first = out.length;
       const at = info.map((x, k) => { const r = x.set[0] === g.line ? null : x.all.get(x.set[0]); return r ? r.q : g.pts[k]; });
       for (const [a, b] of runs) {
         const set = info[a].set, mid = Math.floor((a + b) / 2), m = info[mid];
@@ -333,12 +334,26 @@
       }
       if (g.line !== HUIA) track[g.line].push({ xs: at.map((c) => c[0] * KX), ys: at.map((c) => c[1]) });
       for (const x of g.stops) ends[x.st].push({ line: g.line, p: at[x.k] });
+      if (out.length > first && g.stops.length) {
+        termini.push({ f: out[first], start: true, st: g.stops[0].st }, { f: out[out.length - 1], start: false, st: g.stops[g.stops.length - 1].st });
+      }
     });
-    return { lines: out, track, ends };
+    return { lines: out, track, ends, termini };
   }
   function layout(f) {
     const key = Array.from(f).sort().join(',') + (A.isDark() ? 'd' : 'l') + (geo.real ? 'r' : '');
-    if (drawnFor !== key) { drawn = share(f); drawnFor = key; }
+    if (drawnFor !== key) {
+      drawn = share(f);
+      drawnFor = key;
+      drawn.markers = STATIONS.map((s, i) => stationPoints(i, f));
+      // a line that ends at a station runs right up to its dot
+      for (const t of drawn.termini) {
+        const c = t.f.coords, end = t.start ? c[0] : c[c.length - 1];
+        let best = null, bd = 160;
+        for (const p of drawn.markers[t.st]) { const d = metres(p, end); if (d < bd) { bd = d; best = p; } }
+        if (best && bd > 2) { if (t.start) c.unshift(best); else c.push(best); }
+      }
+    }
     return drawn;
   }
 
@@ -357,11 +372,15 @@
       else list.push({ at: e.p.slice(), n: 1 });
       byLine.set(e.line, list);
     }
+    // the same platform: close by, or further along the same rails (Henderson, where O-W stops short)
+    const onTrack = (p, li) => li !== HUIA && trackDist(li, p) < 6;
+    const samePlace = (q, line, at) => metres(q.at, at) < 12 ||
+      (metres(q.at, at) < 160 && (onTrack(at, q.line) || onTrack(q.at, line)));
     const pts = [];
-    for (const list of byLine.values()) for (const e of list) {
-      const q = pts.find((x) => metres(x.at, e.at) < 12);
+    for (const [line, list] of byLine) for (const e of list) {
+      const q = pts.find((x) => samePlace(x, line, e.at));
       if (q) { q.n++; q.at = [(q.at[0] * (q.n - 1) + e.at[0]) / q.n, (q.at[1] * (q.n - 1) + e.at[1]) / q.n]; }
-      else pts.push({ at: e.at.slice(), n: 1 });
+      else pts.push({ at: e.at.slice(), n: 1, line });
     }
     if (pts.length < 3) return pts.map((q) => q.at);
     // three or more: in order along the bar
@@ -370,6 +389,21 @@
     const o = pts[a].at, dir = [(pts[b].at[0] - o[0]) * KX, pts[b].at[1] - o[1]];
     const along = (p) => (p[0] - o[0]) * KX * dir[0] + (p[1] - o[1]) * dir[1];
     return pts.map((q) => q.at).sort((p, q) => along(p) - along(q));
+  }
+
+  /** How far a point is from a line's drawn track (m). */
+  function trackDist(li, p) {
+    let bd = Infinity;
+    const px = p[0] * KX;
+    for (const { xs, ys } of drawn.track[li] || []) {
+      for (let i = 0; i < xs.length - 1; i++) {
+        const dx = xs[i + 1] - xs[i], dy = ys[i + 1] - ys[i], l2 = dx * dx + dy * dy;
+        const t = l2 ? Math.min(1, Math.max(0, ((px - xs[i]) * dx + (p[1] - ys[i]) * dy) / l2)) : 0;
+        const ex = xs[i] + t * dx - px, ey = ys[i] + t * dy - p[1];
+        bd = Math.min(bd, ex * ex + ey * ey);
+      }
+    }
+    return Math.sqrt(bd) * M;
   }
 
   /** The closest point on a line's track to a GPS fix. */
@@ -402,7 +436,7 @@
     STATIONS.forEach((s, i) => {
       const lines = [0, 1, 2].filter((k) => f.has(k) && s.lines & (1 << k));
       if (!s.extra && !lines.length) return;
-      const pts = stationPoints(i, f);
+      const pts = drawn.markers[i].slice();
       if (!pts.length) pts.push([s.lon, s.lat]);
       const r = s.extra ? 1.1 : geo.junction[i] ? 1.6 : lines.length > 1 ? 1.35 : geo.terminus[i] ? 1.2 : 1;
       const color = pts.length > 1 || (!s.extra && (lines.length > 1 || i === sel)) ? A.pal.navy : s.extra ? HUIA_COLOR() : NET.lineColors[lines[0]];
