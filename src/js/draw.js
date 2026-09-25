@@ -396,14 +396,20 @@
     const g = ctx.createLinearGradient(0, 0, 0, road);
     g.addColorStop(0, '#7FB6F0'); g.addColorStop(1, '#D6EAFB');
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, road);
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.beginPath(); ctx.arc(w * 0.2, road * 0.3, h * 0.08, 0, 7); ctx.arc(w * 0.26, road * 0.26, h * 0.1, 0, 7); ctx.arc(w * 0.32, road * 0.3, h * 0.07, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    for (const [cx, cy, k] of [[0.18, 0.28, 1], [0.72, 0.18, 0.7], [0.9, 0.34, 0.55]]) {
+      const x = w * cx, y = road * cy, u = h * 0.07 * k;
+      ctx.beginPath();
+      ctx.arc(x, y + u * 0.3, u, 0, 7); ctx.arc(x + u * 1.2, y - u * 0.3, u * 1.35, 0, 7); ctx.arc(x + u * 2.6, y + u * 0.3, u, 0, 7);
+      ctx.fill();
+      ctx.beginPath(); ctx.roundRect(x - u * 0.4, y + u * 0.2, u * 3.6, u * 1.1, u * 0.55); ctx.fill();
+    }
     ctx.fillStyle = '#3A414C'; ctx.fillRect(0, road, w, h - road);
     ctx.fillStyle = '#F0E3A8';
     for (let x = 0; x < w; x += h * 0.2) ctx.fillRect(x, road + (h - road) * 0.5, h * 0.1, Math.max(1, h * 0.012));
     const look = A.lookOf(model);
-    const bl = w * 0.78;
     const bh = look.doubleDeck ? road * 0.5 : road * 0.56;
+    const bl = Math.min(w * 0.78, bh * 3.3);
     A.drawBus(ctx, (w - bl) / 2, road + h * 0.03, bl, bh, { t: t || 0, moving: !!moving, dp: Math.max(1, h / 90), look });
   };
 

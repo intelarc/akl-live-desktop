@@ -56,6 +56,7 @@
   /** Draws every portrait canvas inside root (after it's been put on the page). */
   A.paintPortraits = function (root) {
     for (const c of A.$$('canvas[data-portrait]', root)) {
+      if (!c.getBoundingClientRect().width) continue;          // hidden: painted when its screen shows
       const { ctx, w, h } = A.fitCanvas(c);
       A.drawPortrait(ctx, w, h, A.fleet.model(c.dataset.portrait), 0, false);
     }

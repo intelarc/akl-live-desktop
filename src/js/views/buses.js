@@ -197,7 +197,14 @@
     const walk = +A.settings.get('walkMin') || 0;
     if (walk && !d.cancelled) {
       const spare = d.expected - now - walk * 60;
-      facts.push(spare > 60 ? `Leave in ${Math.floor(spare / 60)} min (${walk} min walk)` : spare > -30 ? `<b class="leave">Leave now</b>` : `Too late to walk it`);
+      if (spare > 60) facts.push(`Leave in ${Math.floor(spare / 60)} min (${walk} min walk)`);
+      else if (spare > -30) facts.push(`<b class="leave">Leave now</b>`);
+      else {
+        // this one's gone for you: which one can you still make?
+        const next = b.departures.find((x) => !x.cancelled && x.expected - now - walk * 60 > 60);
+        facts.push(next ? `Too late to walk to this one · catch the ${T.clock(next.expected)}, leave in ${Math.floor((next.expected - now - walk * 60) / 60)} min`
+                        : 'Too late to walk to this one');
+      }
     }
     if (facts.length) h += `<div class="facts">${facts.join('<span>·</span>')}</div>`;
     const later = b.departures.filter((x) => x !== d).slice(0, 5);

@@ -10,7 +10,9 @@ let win = null, mini = null, tray = null, quitting = false, trayLines = [];
 
 app.setAppUserModelId(APP_ID);
 if (!app.requestSingleInstanceLock()) { app.quit(); }
-app.on('second-instance', () => showMain());
+/** "--view=trains" from a taskbar jump-list task; "--mini" for the desk board. */
+const viewArg = (argv) => { const a = argv.find((x) => x.startsWith('--view=')); return a ? a.slice(7) : null; };
+app.on('second-instance', (e, argv) => { if (argv.includes('--mini')) openMini(); else showMain(viewArg(argv)); });
 
 // ---------- small persistent state (window place, desktop options) ----------
 const stateFile = () => path.join(app.getPath('userData'), 'desktop.json');
@@ -177,6 +179,17 @@ app.whenReady().then(() => {
   loadState();
   createMain();
   createTray();
+  const v = viewArg(process.argv);
+  if (v) win.webContents.once('did-finish-load', () => win.webContents.send('navigate', v));
+  if (process.argv.includes('--mini')) openMini();
+  // right-click the taskbar button for these
+  const task = (args, title, description) => ({ program: process.execPath, arguments: args, iconPath: process.execPath, iconIndex: 0, title, description });
+  app.setUserTasks([
+    task('--view=buses', 'Buses', 'Your stops, live'),
+    task('--view=trains', 'Trains', 'The network, live'),
+    task('--view=live', 'Every bus', 'Every bus in Auckland on a map'),
+    task('--mini', 'Desk board', 'The small always-on-top board'),
+  ]);
 });
 app.on('before-quit', () => { quitting = true; });
 app.on('window-all-closed', () => { if (!state.closeToTray) app.quit(); });

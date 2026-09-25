@@ -71,7 +71,7 @@
       this.map.keyboard.disableRotation();
       if (this.o.interactive !== false) {
         this.map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
-        this.map.addControl(new maplibregl.ScaleControl({ maxWidth: 110 }), 'bottom-left');
+        this.map.addControl(new maplibregl.ScaleControl({ maxWidth: 110 }), 'bottom-right');
       }
       this.map.on('style.load', () => this._install());
       (A.maps = A.maps || []).push(this);          // for poking at from the dev tools

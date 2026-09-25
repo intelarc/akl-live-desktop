@@ -121,7 +121,7 @@
       const sorted = list.slice().sort((a, b) => (a.route || 'zzz').localeCompare(b.route || 'zzz', undefined, { numeric: true }) || a.info.fleetNo.localeCompare(b.info.fleetNo));
       res.innerHTML = `<div class="list-head">${list.length} shown</div>` + sorted.slice(0, 80).map((b) =>
         `<button class="res-row${b.v.id === selected ? ' on' : ''}" data-id="${esc(b.v.id)}">${A.routeBadge(b.route || '—', A.fleet.color(b.info.code))}` +
-        `<span><b>${esc(b.info.fleetNo)}</b><small>${esc(b.info.model ? b.info.model.short : b.info.operator)}</small></span>` +
+        `<span class="rr-text"><b>${esc(b.info.fleetNo)}</b><small>${esc(b.info.model ? b.info.model.short : b.info.operator)}</small></span>` +
         `<em>${b.v.speedKmh == null ? '' : b.v.speedKmh < 2 ? 'Stopped' : Math.round(b.v.speedKmh) + ' km/h'}</em></button>`).join('') +
         (list.length > 80 ? `<div class="empty">…and ${list.length - 80} more. Narrow the search.</div>` : '');
       A.$$('.res-row', res).forEach((b) => { b.onclick = () => pick(b.dataset.id, true); });

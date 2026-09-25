@@ -31,7 +31,7 @@
     rows.innerHTML = boards.map((b, i) => {
       const deps = b.departures.filter((d) => !d.cancelled && d.expected >= now - 30);
       const d = deps[0];
-      const later = deps.slice(1, 3).map((x) => `<span data-exp="${x.expected}">${A.countdown(x.expected - now)}</span>`).join('');
+      const later = deps.slice(1, 3).map((x) => `<span data-exp="${x.expected}">${A.countdown(x.expected - now)}</span>`).join(', ');
       return `<div class="mb-row">
         <span class="mb-route" style="--c:${A.pal.dir[i % 2]}">${esc((d && d.route) || A.settings.get('route'))}</span>
         <div class="mb-dest"><b>${esc((d && d.headsign) || b.headsign || b.code)}</b><small>${d ? (d.live ? '<i class="mb-live"></i>' + esc(A.punctuality(d.delay).text) : 'Scheduled') : 'No buses soon'}${later ? ' · then ' + later : ''}</small></div>

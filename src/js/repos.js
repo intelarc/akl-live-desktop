@@ -16,16 +16,18 @@
     return a;
   }
 
-  /** Scheduled departures from a stop: from an hour ago, [hours] ahead. */
+  /** Scheduled departures from a stop: from an hour ago, [hours] ahead. AT answers at most
+   *  three hours per query, so longer spans are asked for in three-hour windows. */
   async function schedule(stopId, route, hours) {
     const nowSec = T.now();
     const h = T.parts(Date.now()).h;
-    const queries = [[T.date(), Math.max(0, h - 1)]];
-    if (h < 3) queries.push([T.date(null, -1), h + 23]);
+    const queries = [];
+    for (let s = Math.max(0, h - 1); s < Math.min(24, h - 1 + hours); s += 3) queries.push([T.date(), s]);
+    if (h < 3) queries.push([T.date(null, -1), h + 23]);            // after midnight: last night's late buses
     const out = new Map();
-    for (const [date, hour] of queries) {
-      const j = await A.api.get(`/gtfs/v3/stops/${stopId}/stoptrips?filter%5Bdate%5D=${date}` +
-                                `&filter%5Bstart_hour%5D=${hour}&hour_range=${hours}`);
+    const pages = await Promise.all(queries.map(([date, hour]) => A.api.get(`/gtfs/v3/stops/${stopId}/stoptrips?` +
+      `filter%5Bdate%5D=${date}&filter%5Bstart_hour%5D=${hour}&hour_range=3`)));
+    for (const j of pages) {
       for (const e of (j && j.data) || []) {
         const a = e.attributes;
         if (!a || a.pickup_type === 1) continue;

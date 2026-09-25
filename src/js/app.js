@@ -37,6 +37,7 @@
     const el = A.$(`#main .view[data-view="${id}"]`);
     if (!mounted[id]) { A.views[id].mount(el); mounted[id] = true; }
     A.views[id].show();
+    requestAnimationFrame(() => A.paintPortraits(el));
     A.settings.set('view', id);
     document.title = `AKL Live · ${VIEWS.find((v) => v[0] === id)[1]}`;
   }

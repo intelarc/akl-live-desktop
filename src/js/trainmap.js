@@ -237,7 +237,8 @@
         const col = NET.lineColors[t.line];
         const sel = t.v.id === this.selTrain;
         const hov = this.hover && this.hover.kind === 'train' && this.hover.id === t.v.id;
-        const rad = sel ? 11 : hov ? 9.5 : 8;
+        const base = Math.max(8, Math.min(13, v.s * 3.4));       // a bit bigger as you zoom in
+        const rad = sel ? base + 3 : hov ? base + 1.5 : base;
         if (sel) {
           const p = 0.5 + 0.5 * Math.sin(now * 4);
           ctx.globalAlpha = 0.18 + 0.2 * p; ctx.fillStyle = col;
