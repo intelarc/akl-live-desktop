@@ -313,7 +313,15 @@
     const out = [], track = [[], [], []], ends = STATIONS.map(() => []), termini = [];
     infos.forEach(({ g, info, runs }, gi) => {
       const first = out.length;
-      const at = info.map((x, k) => { const r = x.set[0] === g.line ? null : x.all.get(x.set[0]); return r ? r.q : g.pts[k]; });
+      // along shared rails a line is drawn on the reference line's track; ease on and off it
+      // over ±80 m so lines converge where they meet instead of jumping across
+      const disp = info.map((x, k) => { const r = x.set[0] === g.line ? null : x.all.get(x.set[0]); return r ? [r.q[0] - g.pts[k][0], r.q[1] - g.pts[k][1]] : [0, 0]; });
+      const at = g.pts.map((p, k) => {
+        if (disp[k][0] === 0 && disp[k][1] === 0 && !disp.slice(Math.max(0, k - 4), k + 5).some((d) => d[0] || d[1])) return p;
+        let sx = 0, sy = 0, c = 0;
+        for (let j = Math.max(0, k - 4); j <= Math.min(disp.length - 1, k + 4); j++) { sx += disp[j][0]; sy += disp[j][1]; c++; }
+        return [p[0] + sx / c, p[1] + sy / c];
+      });
       for (const [a, b] of runs) {
         const set = info[a].set, mid = Math.floor((a + b) / 2), m = info[mid];
         let order = set;
