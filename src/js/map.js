@@ -159,7 +159,10 @@
       this.ready = false;
       this.map.setStyle(styleFor(b), { diff: false });
     }
-    resize() { this.map.resize(); }
+    resize() {
+      this.map.resize();
+      if (this._pendingFit && this.map.getContainer().clientWidth) this.fit(...this._pendingFit);
+    }
 
     /** Tilt into 3D with the terrain raised, or back to flat. */
     toggle3d(on) {
@@ -470,9 +473,17 @@
 
     fit(points, pad, maxZoom) {
       if (!points || !points.length) return;
+      // a hidden map has no size to fit into: do it when it's shown (see resize)
+      if (!this.map.getContainer().clientWidth) { this._pendingFit = [points, pad, maxZoom]; return; }
+      this._pendingFit = null;
       const b = new maplibregl.LngLatBounds(points[0], points[0]);
       points.forEach((p) => b.extend(p));
-      this.map.fitBounds(b, { padding: pad == null ? 48 : pad, maxZoom: maxZoom || 15.5, duration: this._fitted ? 800 : 0, pitch: this.map.getPitch(), bearing: this.map.getBearing() });
+      const opts = { padding: pad == null ? 48 : pad, maxZoom: maxZoom || 15.5, duration: this._fitted ? 800 : 0 };
+      try {
+        this.map.fitBounds(b, Object.assign({ bearing: this.map.getBearing(), pitch: this.map.getPitch() }, opts));
+      } catch (e) {
+        try { this.map.fitBounds(b, opts); } catch (e2) { this.map.jumpTo({ center: b.getCenter(), zoom: 12 }); }
+      }
       this._fitted = true;
     }
     flyTo(lon, lat, zoom) { this.map.flyTo({ center: [lon, lat], zoom: Math.max(this.map.getZoom(), zoom || 14.5), speed: 1.6 }); }

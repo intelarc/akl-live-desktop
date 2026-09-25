@@ -136,7 +136,7 @@
     }
     syncBasemap();
     setTimeout(() => map.resize(), 30);
-    if (!from || !to) setTimeout(() => A.$(from ? '#p-to' : '#p-from', root).focus(), 60);
+    setTimeout(() => { if (!from || !to) A.$(from ? '#p-to' : '#p-from', root).focus(); }, 60);
     startLive();
   };
   V.hide = function () { clearInterval(liveTimer); };
@@ -145,6 +145,8 @@
   /** Plan to (or from) somewhere, from elsewhere in the app. */
   V.goTo = function (place, asFrom) {
     if (asFrom) from = place; else { to = place; if (!from) from = A.places.home(); }
+    A.$$('.suggest', root).forEach((b) => { b.hidden = true; });
+    if (root.contains(document.activeElement)) document.activeElement.blur();
     syncInputs();
     run();
   };
