@@ -1,7 +1,7 @@
 # AKL Live for Windows
 
 The desktop version of [AKL Live](https://github.com/intelarc/akl-live-android):
-live Auckland buses, trains and ferries, a journey planner, and detailed 3D
+live Auckland buses, trains and ferries, a journey planner, and detailed
 maps, with the AT API key built in. Private.
 
 ## Install
@@ -65,10 +65,8 @@ Running a newer installer updates it in place and keeps your settings.
   service. Yours come first, with a badge in the sidebar.
 - **Maps, in detail.**
   - Satellite photos (Esri, or LINZ's 7.5 cm aerials with a free key) with
-    roads, street names, suburbs, places and 3D buildings drawn over them,
+    roads, street names, suburbs, places and buildings drawn over them,
     or OpenFreeMap's street map with hillshading.
-  - **3D** tilts the map over real terrain with a sky. Right-drag to rotate
-    and tilt.
   - All 5,800 stops appear as you zoom in; click one for its departures.
 - **Search everything** (Ctrl+K): places and addresses (for directions),
   stops (for departures), routes (on the live map), fleet numbers, bus models,
@@ -100,9 +98,9 @@ Electron around plain web pages in `src/` (no framework, no bundler).
     feeds.
 - **Maps** are MapLibre GL (`src/vendor`, v5, BSD-3), using these sources:
   - Esri World Imagery or LINZ aerials.
-  - OpenFreeMap vector tiles for streets, labels and 3D buildings (©
+  - OpenFreeMap vector tiles for streets, labels and buildings (©
     OpenStreetMap contributors).
-  - AWS / Mapzen terrain tiles.
+  - AWS / Mapzen elevation tiles, for hill shading.
 - **Places and walking:** [Photon](https://photon.komoot.io) for address
   search, and [FOSSGIS OSRM](https://routing.openstreetmap.de) for walking
   directions (both OpenStreetMap data).

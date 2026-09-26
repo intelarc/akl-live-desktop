@@ -1,4 +1,4 @@
-/* AKL Live v2: directions, stops, alerts, search, 3D maps */
+/* AKL Live v2: directions, stops, alerts, search, maps */
 .view:not([hidden]) > * { animation: view-in .22s cubic-bezier(.2, .8, .3, 1); }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
 .muted { color: var(--muted); }
@@ -103,7 +103,7 @@ details.turns li { padding: 3px 0; color: var(--muted); }
 details.turns li small { color: var(--faint); margin-left: 6px; }
 .it-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 
-/* map pins, popups, the 3D button */
+/* map pins, popups */
 .pin { position: relative; width: 34px; height: 44px; display: grid; place-items: start center; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .35)); }
 .pin::before { content: ""; position: absolute; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); top: 2px; background: #235EA8; border: 3px solid #fff; }
 .pin.end::before { background: #D64545; }
@@ -115,8 +115,6 @@ details.turns li small { color: var(--faint); margin-left: 6px; }
 .ctx button:hover { background: var(--accent-soft); }
 .ctx-title { padding: 6px 10px; font-weight: 800; }
 .ctx-title small { color: var(--muted); font-weight: 600; }
-.map-3d .t3d { font: 800 12px var(--display) !important; color: #333 !important; width: 29px; }
-.map-3d .t3d.on { background: #235EA8 !important; color: #fff !important; }
 .vmark.train .vbus { width: 14px; height: 40px; border-radius: 7px 7px 3px 3px; }
 .vtag { white-space: nowrap; }
 

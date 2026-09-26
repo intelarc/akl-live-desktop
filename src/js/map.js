@@ -1,20 +1,20 @@
 // Real maps (MapLibre GL) in full detail: Esri or LINZ aerials with streets,
-// place names and 3D buildings over them (or OpenFreeMap's street map), 3D
-// terrain with a sky, every stop in Auckland, journeys, routes, and a crowd of
-// a thousand live vehicles that glide between GPS fixes.
+// place names and buildings over them (or OpenFreeMap's street map with hill
+// shading), every stop in Auckland, journeys, routes, and a crowd of a
+// thousand live vehicles that glide between GPS fixes. Always flat: no 3D.
 (function (A) {
   'use strict';
   const GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
   const FONT = ['Noto Sans Bold'], FONT_R = ['Noto Sans Regular'];
   const CROWD_MS = 4000, MARK_MS = 10000;
-  const TERRAIN = { type: 'raster-dem', tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+  const TERRAIN = { type: 'raster-dem',             // elevation, for shading the hills tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
                     encoding: 'terrarium', tileSize: 256, maxzoom: 15, attribution: 'Terrain: Mapzen / AWS Open Data' };
   A.AKL_BOUNDS = [[174.56, -37.08], [174.98, -36.62]];
   A.MODE_COLOR = { bus: '#1E88E5', train: '#2E3A59', ferry: '#0A8F8F', walk: '#8E9AAF' };
 
   const nameExpr = ['coalesce', ['get', 'name:en'], ['get', 'name_en'], ['get', 'name']];
 
-  /** Aerial photos with the streets drawn in: roads, names, places, and buildings in 3D. */
+  /** Aerial photos with the streets drawn in: roads, names, places and buildings. */
   function satellite(dark) {
     const linz = (A.settings.get('linzKey') || '').trim();
     const tiles = linz
@@ -39,9 +39,8 @@
           filter: ['match', ['get', 'class'], ['secondary', 'tertiary', 'minor', 'service'], true, false],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': 'rgba(255,255,255,0.28)', 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 0.6, 18, 4] } },
-        { id: 'hy-buildings', type: 'fill-extrusion', source: 'omt', 'source-layer': 'building', minzoom: 14.5,
-          paint: { 'fill-extrusion-color': dark ? '#9fb1cc' : '#e8eef6', 'fill-extrusion-opacity': 0.55,
-                   'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0] } },
+        { id: 'hy-buildings', type: 'fill', source: 'omt', 'source-layer': 'building', minzoom: 14.5,
+          paint: { 'fill-color': dark ? '#9fb1cc' : '#e8eef6', 'fill-opacity': 0.3, 'fill-outline-color': dark ? 'rgba(159,177,204,0.7)' : 'rgba(232,238,246,0.8)' } },
         { id: 'hy-water-names', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 11,
           layout: { 'text-field': nameExpr, 'text-font': FONT_R, 'text-size': 12, 'text-letter-spacing': 0.1 },
           paint: { 'text-color': '#bfe3ff', 'text-halo-color': halo, 'text-halo-width': 1.4 } },
@@ -161,20 +160,6 @@
     ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(8.3, 15.2, 1.1, 0, 7); ctx.arc(13.7, 15.2, 1.1, 0, 7); ctx.fill();
   });
 
-  /** A little toolbar on the map: 3D and follow-me. */
-  class Tools {
-    constructor(view) { this.view = view; }
-    onAdd() {
-      const el = document.createElement('div');
-      el.className = 'maplibregl-ctrl maplibregl-ctrl-group map-3d';
-      el.innerHTML = '<button type="button" title="Tilt into 3D (with terrain)" class="t3d">3D</button>';
-      el.querySelector('.t3d').onclick = () => this.view.toggle3d();
-      this.el = el;
-      return el;
-    }
-    onRemove() { this.el.remove(); }
-  }
-
   const empty = () => ({ type: 'FeatureCollection', features: [] });
 
   A.MapView = class {
@@ -188,16 +173,14 @@
       this.pins = [];
       this.sel = null;
       this.ready = false;
-      this.is3d = false;
       const interactive = this.o.interactive !== false;
       this.map = new maplibregl.Map({
         container: el, style: styleFor(this.basemap), center: [174.76, -36.88], zoom: 10.6,
-        minZoom: 8, maxZoom: 19.5, maxPitch: 78, attributionControl: { compact: true }, fadeDuration: 120,
-        interactive, cooperativeGestures: !!this.o.cooperativeGestures,
+        minZoom: 8, maxZoom: 19.5, maxPitch: 0, pitchWithRotate: false, touchPitch: false,   // flat: rotate, never tilt
+        attributionControl: { compact: true }, fadeDuration: 120, interactive, cooperativeGestures: !!this.o.cooperativeGestures,
       });
       if (interactive) {
-        this.map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }), 'bottom-right');
-        this.map.addControl(new Tools(this), 'bottom-right');
+        this.map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), 'bottom-right');
         this.map.addControl(new maplibregl.ScaleControl({ maxWidth: 110 }), 'bottom-right');
       }
       this.map.on('style.load', () => this._install());
@@ -220,22 +203,6 @@
       if (this._pendingFit && this.map.getContainer().clientWidth) this.fit(...this._pendingFit);
     }
 
-    /** Tilt into 3D with the terrain raised, or back to flat. */
-    toggle3d(on) {
-      this.is3d = on == null ? !this.is3d : on;
-      this._terrain();
-      this.map.easeTo({ pitch: this.is3d ? 62 : 0, bearing: this.is3d ? this.map.getBearing() || -18 : 0, duration: 900 });
-      const b = this.map.getContainer().querySelector('.t3d');
-      if (b) b.classList.toggle('on', this.is3d);
-    }
-    _terrain() {
-      if (!this.ready) return;
-      try {
-        if (this.is3d) this.map.setTerrain({ source: 'akl-terrain', exaggeration: 1.4 });
-        else this.map.setTerrain(null);
-      } catch (e) { /* style still settling */ }
-    }
-
     _install() {
       const m = this.map;
       const dark = A.isDark();
@@ -252,17 +219,12 @@
       });
       for (const [k, c] of [['bus', '#235EA8'], ['train', '#1A2744'], ['ferry', '#0A8F8F']]) if (!m.hasImage('stop-' + k)) m.addImage('stop-' + k, stopImg(c), { pixelRatio: 2 });
       if (!m.getSource('akl-terrain')) m.addSource('akl-terrain', TERRAIN);
-      // streets style: its own 3D buildings are there; add a soft hillshade from the terrain
+      // streets style: a soft hillshade from the elevation tiles
       if (this.basemap === 'streets' && !m.getLayer('akl-hillshade')) {
         const before = (m.getStyle().layers.find((l) => l.type === 'symbol') || {}).id;
         m.addLayer({ id: 'akl-hillshade', type: 'hillshade', source: 'akl-terrain',
           paint: { 'hillshade-exaggeration': 0.35, 'hillshade-shadow-color': dark ? '#000000' : '#5a6b7f', 'hillshade-highlight-color': dark ? '#2a3a55' : '#ffffff' } }, before);
       }
-      try {
-        if (m.setSky) m.setSky(dark
-          ? { 'sky-color': '#0b1a33', 'horizon-color': '#1f3558', 'fog-color': '#0b1628', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.4, 'atmosphere-blend': 0.6 }
-          : { 'sky-color': '#7fb4ef', 'horizon-color': '#e4f1ff', 'fog-color': '#dfeaf7', 'sky-horizon-blend': 0.55, 'horizon-fog-blend': 0.5, 'fog-ground-blend': 0.35, 'atmosphere-blend': 0.8 });
-      } catch (e) { /* older MapLibre */ }
 
       for (const id of ['akl-lines', 'akl-links', 'akl-stops', 'crowd', 'jny', 'akl-allstops']) if (!m.getSource(id)) m.addSource(id, { type: 'geojson', data: empty() });
       const zoom = ['zoom'];
@@ -358,7 +320,6 @@
         paint: { 'text-color': '#FFFFFF', 'text-halo-color': '#0B1628', 'text-halo-width': 1.8 } });
 
       this.ready = true;
-      this._terrain();
       this.setLines(this.data.lines);
       this.setLinks(this.data.links);
       this.setStops(this.data.stops);
@@ -584,7 +545,7 @@
       points.forEach((p) => b.extend(p));
       const opts = { padding: pad == null ? 48 : pad, maxZoom: maxZoom || 15.5, duration: this._fitted ? 800 : 0 };
       try {
-        this.map.fitBounds(b, Object.assign({ bearing: this.map.getBearing(), pitch: this.map.getPitch() }, opts));
+        this.map.fitBounds(b, Object.assign({ bearing: this.map.getBearing() }, opts));
       } catch (e) {
         try { this.map.fitBounds(b, opts); } catch (e2) { this.map.jumpTo({ center: b.getCenter(), zoom: 12 }); }
       }
