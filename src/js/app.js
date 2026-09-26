@@ -79,6 +79,50 @@
     if (v && v.key) v.key(e);
   }
 
+  /**
+   * First run without a key: what the key is for, where to get one (free), and
+   * a box to paste it in. Directions and maps work without one, so it can wait.
+   */
+  function welcome() {
+    const box = A.el(`<div class="welcome"><div class="wl-card">
+      <img src="assets/icon.png" alt="">
+      <h1>Kia ora! Welcome to AKL Live</h1>
+      <p>Live buses, trains and ferries come from Auckland Transport's developer API. It's free, but you need your own key:</p>
+      <ol><li>Sign up at <a href="https://dev-portal.at.govt.nz" target="_blank" rel="noopener">dev-portal.at.govt.nz</a></li>
+        <li>Subscribe to AT's GTFS and real-time APIs (no cost)</li>
+        <li>Copy your primary key from your profile and paste it here</li></ol>
+      <form class="wl-in"><input type="password" placeholder="Your AT API key" spellcheck="false" autocomplete="off"><button class="btn primary" type="submit">Save</button></form>
+      <div class="wl-msg" hidden></div>
+      <button class="wl-skip" type="button">Look around first</button>
+      <small>Directions and the maps work without a key; live times need one. You can add it any time in Settings.</small>
+    </div></div>`);
+    document.body.appendChild(box);
+    const input = A.$('input', box), msg = A.$('.wl-msg', box), btn = A.$('button[type=submit]', box);
+    const say = (text, bad) => { msg.hidden = false; msg.textContent = text; msg.classList.toggle('bad', !!bad); };
+    A.$('.wl-skip', box).onclick = () => box.remove();
+    A.$('form', box).onsubmit = async (e) => {
+      e.preventDefault();
+      const key = input.value.trim();
+      if (!key) { say('Paste your key first.', true); return; }
+      btn.disabled = true;
+      say('Checking it with AT…');
+      A.settings.set('apiKey', key);
+      try {
+        await A.api.get('/gtfs/v3/stops?filter%5Bstop_code%5D=8669');
+        box.remove();
+        A.toast('Your key works. Welcome aboard!');
+        ['buses', 'trains', 'live'].forEach((k) => A.refresh(k));
+        A.alerts.refresh();
+      } catch (err) {
+        A.settings.set('apiKey', '');
+        say(err.message === 'AT rejected the API key (401)' ? "AT didn't accept that key. Check you copied the whole primary key." : err.message, true);
+      }
+      btn.disabled = false;
+    };
+    setTimeout(() => input.focus(), 50);
+  }
+  A.welcome = welcome;
+
   window.addEventListener('DOMContentLoaded', () => {
     A.applyTheme();
     build();
@@ -97,6 +141,6 @@
     });
     show(A.settings.get('view'));
     renderNext();
-    if (!A.api.key()) { show('settings'); A.toast('Add your AT API key to get started'); }
+    if (!A.api.key()) welcome();
   });
 })(window.AKL);

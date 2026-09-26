@@ -211,3 +211,19 @@ html.mica .side-next, html.mica .search-nav { background: color-mix(in srgb, var
 .t-legend .lg-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
 .t-legend .lg-ix { width: 13px; height: 13px; border-radius: 50%; background: #fff; border: 2.5px solid #1A2744; }
 .t-legend .lg-line { width: 18px; height: 3px; border-radius: 2px; background: var(--c, #2B3140); }
+
+
+/* ---------- first run: the AT key ---------- */
+.welcome { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: rgba(6, 12, 24, .55); backdrop-filter: blur(6px); animation: fade .2s ease; }
+.wl-card { width: min(520px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 30px 90px rgba(0, 0, 0, .5); padding: 30px 32px 24px; display: flex; flex-direction: column; gap: 12px; }
+.wl-card img { width: 64px; height: 64px; border-radius: 16px; }
+.wl-card h1 { margin: 4px 0 0; font: 800 24px/1.2 var(--display); }
+.wl-card p { margin: 0; color: var(--muted); }
+.wl-card ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.wl-card a { color: var(--accent, #235EA8); font-weight: 600; }
+.wl-in { display: flex; gap: 8px; margin-top: 6px; }
+.wl-in input { flex: 1; min-width: 0; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
+.wl-msg { font-size: 13px; color: var(--muted); }
+.wl-msg.bad { color: #E0412F; }
+.wl-skip { align-self: flex-start; background: none; border: 0; padding: 4px 0; color: var(--text); font: 600 14px var(--font); text-decoration: underline; cursor: pointer; }
+.wl-card small { color: var(--faint); }

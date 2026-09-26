@@ -1,7 +1,7 @@
 name: Build Windows app
 
-# Builds the installer with the AT API key (a repository secret) built in, and
-# puts it on the "latest" release. This repo is private, so the release is too.
+# Builds the installer and puts it on the "latest" release. No API key is built
+# in: the app asks for your own (free) Auckland Transport key the first time.
 on:
   push:
     branches: [main]
@@ -20,13 +20,10 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build in the API key
+      - name: No built-in key
         shell: pwsh
-        env:
-          AT_API_KEY: ${{ secrets.AT_API_KEY }}
         run: |
-          if (-not $env:AT_API_KEY) { throw "The AT_API_KEY secret is missing" }
-          "// Built into the app by CI; not in git.`nwindow.AKL_KEYS = { at: '$($env:AT_API_KEY)' };" | Out-File -Encoding utf8NoBOM src/js/keys.js
+          "// No key built in: each person adds their own AT key in the app.`nwindow.AKL_KEYS = { at: '' };" | Out-File -Encoding utf8NoBOM src/js/keys.js
 
       - name: Version
         shell: bash
@@ -55,4 +52,4 @@ jobs:
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest dist/*.exe \
             --title "AKL Live for Windows (build ${{ github.run_number }})" \
-            --notes "Built from ${{ github.sha }}. Run the installer: it adds AKL Live to the Start menu and the desktop. Installing a newer build updates it in place."
+            --notes "Built from ${{ github.sha }}. Run the installer: it adds AKL Live to the Start menu and the desktop, and asks for your free Auckland Transport API key the first time (dev-portal.at.govt.nz). Installing a newer build updates it in place."

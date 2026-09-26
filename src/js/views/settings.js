@@ -82,8 +82,8 @@
 
           <section class="card about"><h2>About</h2>
             <div class="about-row"><img src="assets/icon.png" alt=""><div><b>AKL Live for Windows</b><small id="s-version">${A.desktop ? '' : 'Browser preview'}</small></div></div>
-            <p class="help">Live data from the Auckland Transport developer API; not affiliated with Auckland Transport. Maps by MapLibre with imagery from Esri or LINZ and streets from OpenFreeMap / OpenStreetMap. Weather by Open-Meteo.com (CC BY 4.0). Bus models and fleet numbers from the AT Metro Wiki (CC BY-SA). The train map follows AT's post-CRL network map; the bus scenes are inspired by MSMGreen/at-departure-board.</p>
-            <div class="keys-help"><b>Shortcuts</b><span><kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>5</kbd> switch screens</span><span><kbd>Ctrl</kbd>+<kbd>R</kbd> refresh</span>
+            <p class="help">Live data from the Auckland Transport developer API; not affiliated with Auckland Transport. Maps by MapLibre with imagery from Esri or LINZ and streets from OpenFreeMap / OpenStreetMap. Weather by Open-Meteo.com (CC BY 4.0). Bus models and fleet numbers from the AT Metro Wiki (CC BY-SA). The train map is drawn from the track shapes in AT's timetable; the bus scenes are inspired by MSMGreen/at-departure-board.</p>
+            <div class="keys-help"><b>Shortcuts</b><span><kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>8</kbd> switch screens</span><span><kbd>Ctrl</kbd>+<kbd>K</kbd> search</span><span><kbd>Ctrl</kbd>+<kbd>D</kbd> directions</span><span><kbd>Ctrl</kbd>+<kbd>R</kbd> refresh</span>
               <span><kbd>Ctrl</kbd>+<kbd>F</kbd> search every bus</span><span><kbd>Ctrl</kbd>+<kbd>M</kbd> desk board</span><span><kbd>F11</kbd> full screen</span><span><kbd>Esc</kbd> close</span></div>
           </section>
         </div>
