@@ -4,7 +4,7 @@
   'use strict';
   const esc = A.esc, T = A.time;
   const V = {};
-  let root, filter = 'all', sort = 'out', openId = null, map = null, selected = null, portraitRun = false, fitted = null, heroPhoto = false;
+  let root, tab = 'models', filter = 'all', sort = 'out', openId = null, map = null, selected = null, portraitRun = false, fitted = null, heroPhoto = false;
 
   V.mount = function (el) {
     root = el;
@@ -45,8 +45,57 @@
     return out;
   }
 
+  /** Straight to the fleet dex. */
+  V.dex = function () { tab = 'dex'; if (openId) V.open(null); else renderList(); };
+  const tabs = () => `<div class="seg f-tabs">${[['models', 'Models'], ['dex', '🎯 Fleet dex']].map(([k, l]) =>
+    `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  function wireTabs(page) { A.$$('[data-tab]', page).forEach((b) => { b.onclick = () => { tab = b.dataset.tab; renderList(); }; }); }
+
+  // ---------- the fleet dex: every model you've seen pull up at your stops ----------
+  function rank(n, total) {
+    const f = total ? n / total : 0;
+    if (n === 0) return 'Fresh at the kerb';
+    if (f < 0.25) return 'Rookie spotter';
+    if (f < 0.5) return 'Bus botherer';
+    if (f < 0.75) return 'Kerbside connoisseur';
+    if (f < 1) return 'Depot legend';
+    return 'Ultimate spotter. Every model, caught 🏆';
+  }
+  function renderDex() {
+    const sp = A.settings.get('spotted') || {};
+    const models = A.fleet.models.slice().sort((a, b) => (!!sp[b.id] - !!sp[a.id]) || a.name.localeCompare(b.name));
+    const got = models.filter((m) => sp[m.id]).length, total = models.length;
+    const day = (sec) => new Intl.DateTimeFormat('en-NZ', { timeZone: 'Pacific/Auckland', day: 'numeric', month: 'short' }).format(new Date(sec * 1000));
+    const page = A.$('#f-list', root);
+    page.innerHTML = `
+      <header class="page-head"><div><h1>Fleet dex</h1><div class="sub">${got} of ${total} spotted</div></div><div class="head-right">${tabs()}</div></header>
+      <section class="dex-rank"><div><h2>${esc(rank(got, total))}</h2>
+        <p>A model counts once one pulls up at one of your stops while AKL Live is open. The rarer ones are out there somewhere.</p></div>
+        <div class="dex-bar"><i style="width:${Math.round(got * 100 / Math.max(1, total))}%"></i></div></section>
+      <div class="dex-grid">${models.map((m) => {
+        const s = sp[m.id];
+        return `<button class="card dex-card${s ? ' got' : ''}" data-dex="${m.id}">
+          <div class="dex-pic">${s ? A.picHtml(m, 'portrait big') : `<canvas class="portrait big" data-portrait="${m.id}" data-nophoto="1"></canvas><span class="q">?</span>`}</div>
+          <b>${s ? esc(m.short) : '???'}</b><small>${esc(s ? m.maker : m.kind)}</small>
+          ${s ? `<small class="dex-seen"><i></i>${s.n}× · last ${esc(s.no)}</small><small>since ${day(s.first)}</small>` : ''}</button>`;
+      }).join('')}</div>
+      ${got ? '<button class="btn" id="f-dex-reset">Start over</button>' : ''}`;
+    wireTabs(page);
+    A.$$('[data-dex]', page).forEach((b) => {
+      b.onclick = () => {
+        const m = A.fleet.model(b.dataset.dex);
+        if (sp[m.id]) V.open(m.id);
+        else A.toast(`Not spotted yet. Keep an eye out for a ${m.doubleDeck ? 'double-decker' : m.electric ? 'quiet electric one' : 'new face'} at your stop`);
+      };
+    });
+    const reset = A.$('#f-dex-reset', page);
+    if (reset) reset.onclick = () => { if (confirm('Start the dex over? Every model you\'ve spotted gets forgotten.')) { A.settings.set('spotted', {}); renderDex(); } };
+    A.paintPortraits(page);
+  }
+
   // ---------- the list ----------
   function renderList() {
+    if (tab === 'dex') { renderDex(); return; }
     const L = A.state.live;
     const groups = byModel();
     const count = (m) => (groups[m.id] || []).length;
@@ -61,7 +110,7 @@
     const page = A.$('#f-list', root);
     page.innerHTML = `
       <header class="page-head">
-        <div><h1>Fleet</h1><div class="sub">${L.loading ? 'Counting the buses on the road…'
+        <div><div class="h1-row"><h1>Fleet</h1>${tabs()}</div><div class="sub">${L.loading ? 'Counting the buses on the road…'
           : `${A.fleet.models.length} models · <b>${out.toLocaleString()}</b> buses out right now · ${Math.round(known * 100 / Math.max(1, out))}% identified`}</div></div>
         <div class="head-right"><div class="seg-row">${tog('all', 'All', filter)}${tog('electric', '⚡ Electric', filter)}${tog('diesel', 'Diesel', filter)}${tog('double', 'Double-deckers', filter)}</div>
           <div class="seg-row sort">${['out', 'name'].map((k) => `<button class="fchip${sort === k ? ' on' : ''}" data-s="${k}">${k === 'out' ? 'Most out' : 'A–Z'}</button>`).join('')}</div></div>
@@ -76,6 +125,7 @@
       <section class="card ops-card"><div class="card-head"><div><h2>Operators</h2><div class="sub">Who runs what, right now</div></div></div>
         <div class="ops-grid">${operators()}</div></section>
       <p class="credit">Models and fleet numbers from the AT Metro Wiki (atmetro.fandom.com, CC BY-SA), matched to the fleet number each bus reports. Live positions from Auckland Transport.</p>`;
+    wireTabs(page);
     A.$$('[data-k]', page).forEach((b) => { b.onclick = () => { filter = b.dataset.k; renderList(); }; });
     A.$$('[data-s]', page).forEach((b) => { b.onclick = () => { sort = b.dataset.s; renderList(); }; });
     A.$$('[data-open]', page).forEach((b) => { b.onclick = () => V.open(b.dataset.open); });

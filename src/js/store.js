@@ -50,6 +50,7 @@
       }
     }));
     S.boards = out;
+    spot(out);
     S.busError = (out.find((b) => b.error) || {}).error || null;
     S.busUpdated = T.now();
     A.emit('buses', S);
@@ -63,6 +64,32 @@
     const t = Math.min(1, Math.max(0, (now - movedAt) / GLIDE));
     return t * t * (3 - 2 * t);
   };
+  /** A bus of a known model pulling up at one of your stops goes in the fleet dex (once per bus per ten minutes). */
+  function spot(boards) {
+    const now = T.now();
+    const seen = [];
+    for (const b of boards) for (const d of b.departures || []) {
+      if (d.cancelled || !d.vehicle) continue;
+      if (!(d.stopsAway === 0 || (d.expected - now >= -30 && d.expected - now <= 60))) continue;
+      const i = A.fleet.info(d.vehicle.label);
+      if (i && i.model) seen.push([i.model.id, i.fleetNo]);
+    }
+    if (!seen.length) return;
+    const sp = Object.assign({}, A.settings.get('spotted') || {});
+    const fresh = new Set();
+    let changed = false;
+    for (const [id, no] of seen) {
+      const old = sp[id];
+      if (old && old.no === no && now - old.last < 600) continue;
+      if (!old) fresh.add(id);
+      sp[id] = old ? Object.assign({}, old, { n: old.n + 1, last: now, no }) : { n: 1, first: now, last: now, no };
+      changed = true;
+    }
+    if (changed) A.settings.set('spotted', sp);
+    const kiwi = A.settings.get('kiwi') !== false;
+    for (const id of fresh) { const m = A.fleet.model(id); if (m) A.toast(`${kiwi ? 'Chur! ' : ''}New bus spotted: ${m.name}`); }
+  }
+
   async function refreshTrains() {
     try {
       const fresh = await A.trains.poll();

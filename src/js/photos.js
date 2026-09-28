@@ -122,22 +122,27 @@
     },
   };
 
+  // photos that wouldn't load this session: don't keep asking (the drawing stays)
+  const failed = new Set();
+
   /** A model's picture as HTML: its photo if we have it already, else a canvas to draw (and swap for the photo). */
   A.picHtml = function (m, cls) {
-    const p = m && A.photos.known(m);
+    let p = m && A.photos.known(m);
+    if (p && failed.has(p.url)) p = null;
     return p ? `<img class="${cls} photo" src="${A.esc(p.url)}" alt="${A.esc(m.name)}" title="${A.esc(p.credit)}" referrerpolicy="no-referrer" decoding="async">`
       : `<canvas class="${cls}" data-portrait="${m ? m.id : ''}"></canvas>`;
   };
   /** The credit line that goes over a big photo (filled in when the photo arrives). */
   A.creditHtml = function (m) {
-    const p = m && A.photos.known(m);
+    let p = m && A.photos.known(m);
+    if (p && failed.has(p.url)) p = null;
     return `<span class="pic-credit"${p ? '' : ' hidden'}>${p ? A.esc(p.credit) : ''}</span>`;
   };
   /** Looks up every model's photo in the background and warms the image cache, so they show straight away. */
   A.photos.prefetch = async function () {
     for (const m of A.fleet.models) {
       const p = await A.photos.forModel(m);
-      if (p) { const i = new Image(); i.referrerPolicy = 'no-referrer'; i.src = p.url; }
+      if (p) { const i = new Image(); i.referrerPolicy = 'no-referrer'; i.onerror = () => failed.add(p.url); i.src = p.url; }
     }
   };
 
@@ -148,11 +153,12 @@
    */
   A.photoFor = function (canvas) {
     const m = A.fleet.model(canvas.dataset.portrait);
-    if (!m || canvas.dataset.photo) return;
+    if (!m || canvas.dataset.photo || canvas.dataset.nophoto) return;       // the dex keeps unspotted ones a mystery
     canvas.dataset.photo = 'asked';
     A.photos.forModel(m).then((p) => {
-      if (!p || !canvas.isConnected) return;
+      if (!p || !canvas.isConnected || failed.has(p.url)) return;
       const img = new Image();
+      img.onerror = () => failed.add(p.url);
       img.className = canvas.className + ' photo';
       img.alt = m.name;
       img.title = p.credit;

@@ -43,15 +43,18 @@ anyway**.
     and where it is now. The map draws the whole journey along the real
     route, and tracks your bus live.
   - **Remind me to leave** sends a Windows alert a minute before you need to
-    head out. **Copy directions** puts the trip on the clipboard.
+    head out. **Copy directions** puts the trip on the clipboard, and **Add to
+    calendar** saves it as an event with a nudge before it's time to go.
 - **Stops.** Search any stop, station or wharf by name or number, or click one
   on the map.
   - Live departures on every route (a station shows all its platforms), with
     delays, stops away, the model and how full each one is.
   - Approaching buses on the map, alerts at that stop, favourites, stops near
     home or anywhere you right-click, and "add to Buses".
-- **Buses.** The 27H at Aldersgate Road, both ways, each with a live scene:
-  the bus drives in as it counts down, under Auckland's real sky and weather.
+- **Buses.** A hello for the time of day ("Mōrena", "Ahiahi mārie") and a
+  line on how things look ("Sweet as, the 27H is on time"), then the 27H at
+  Aldersgate Road, both ways, each with a live scene: the bus drives in as it
+  counts down, under Auckland's real sky and weather.
   - Next bus in detail, "leave in 3 min" (or which bus you can still catch),
     the next five buses, and the rest of today's timetable.
   - A live route map, the weather for the next six hours, and alerts affecting
@@ -73,9 +76,13 @@ anyway**.
     each way and its stops.
   - Click a vehicle for its destination, delay, speed, load and model, the
     rest of its route with its next stops and times, and **Follow** it.
+- **Routes.** Every bus, train and ferry route running today, searchable;
+  click one to see it and its buses on the live map.
 - **Fleet.** Every bus model on the road, with a real photo of each and how
   many are out, and a page per model with its specs, fleet numbers and a live
   map. Photos come from the AT Metro Wiki (CC BY-SA) or Wikimedia Commons, credited on each.
+- **Fleet dex.** Collect the bus models: each one counts once it pulls up at
+  one of your stops. From "Rookie spotter" to "Depot legend".
 - **Alerts.** Every current and upcoming disruption: detours, moved stops, no
   service. Yours come first, with a badge in the sidebar.
 - **Maps, in detail.**
@@ -90,9 +97,11 @@ anyway**.
   - A tray icon with the countdown, and Windows alerts before your bus.
   - An always-on-top **desk board** (Ctrl+M), and taskbar right-click
     shortcuts.
-  - Windows 11 Mica, start with Windows, close to the tray, light/dark
-    following Windows.
-  - Keyboard shortcuts: Ctrl+1–8, Ctrl+K, Ctrl+D, Ctrl+F, Ctrl+R, F11.
+  - Six colour themes, each after something Auckland (Waitematā, Pōhutukawa,
+    Kawakawa, Kōwhai, Rangitoto, Tūī), light or dark following Windows, and
+    Kiwi mode's te reo greetings and local slang.
+  - Windows 11 Mica, start with Windows, close to the tray.
+  - Keyboard shortcuts: Ctrl+1–9, Ctrl+K, Ctrl+D, Ctrl+F, Ctrl+R, F11.
 
 ## How it's built
 

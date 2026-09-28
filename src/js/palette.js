@@ -23,7 +23,7 @@
   }
 
   const views = [['buses', 'Buses', '🚌'], ['plan', 'Directions', '🧭'], ['stops', 'Stops', '🚏'], ['trains', 'Trains', '🚆'],
-                 ['live', 'Every bus (live map)', '📍'], ['fleet', 'Fleet', '🚍'], ['alerts', 'Alerts', '⚠️'], ['settings', 'Settings', '⚙️']];
+                 ['live', 'Every bus (live map)', '📍'], ['routes', 'Every route', '🗺'], ['fleet', 'Fleet', '🚍'], ['alerts', 'Alerts', '⚠️'], ['settings', 'Settings', '⚙️']];
   function actions() {
     const out = views.map(([id, name, icon]) => ({ icon, title: `Go to ${name}`, sub: 'Screen', run: () => A.show(id) }));
     out.push({ icon: '🌓', title: 'Switch light / dark', sub: 'Theme', run: () => A.settings.set('theme', A.isDark() ? 'light' : 'dark') });

@@ -12,7 +12,7 @@
     root.innerHTML = `
       <div class="page">
         <header class="page-head">
-          <div><h1 id="b-place"></h1><div class="sub" id="b-sub"></div></div>
+          <div><div class="greet" id="b-greet"></div><h1 id="b-place"></h1><div class="sub vibe" id="b-sub"></div></div>
           <div class="head-right">
             <div class="wx" id="b-wx"></div>
             <div class="clock" id="b-clock"></div>
@@ -21,7 +21,7 @@
         </header>
         <div class="banner error" id="b-error" hidden></div>
         <div id="b-alerts"></div>
-        <div class="pills" id="b-pills"></div>
+        <div class="pill-row"><div class="pills" id="b-pills"></div><div class="quick-row" id="b-quick"></div></div>
         <div class="lanes" id="b-lanes"></div>
         <section class="card map-card" id="b-mapcard">
           <div class="card-head">
@@ -93,6 +93,20 @@
     A.$$('[data-go]', el).forEach((b) => { b.onclick = () => A.show('alerts'); });
   }
 
+  /** Shortcuts, as on the Android app's home screen. */
+  function renderQuick() {
+    const home = A.places.home(), spotted = Object.keys(A.settings.get('spotted') || {}).length;
+    const mine = A.alerts.mine().length;
+    A.$('#b-quick', root).innerHTML =
+      `<button class="qchip" data-go="settings">🏠 ${home && A.settings.get('home') ? esc(home.name) : 'Set home'}</button>` +
+      `<button class="qchip" data-go="live">🗺 Every bus</button>` +
+      `<button class="qchip" data-go="alerts">⚠ Alerts${mine ? ` <b>${mine}</b>` : ''}</button>` +
+      `<button class="qchip" data-go="dex">🎯 Fleet dex <b>${spotted}/${A.fleet.models.length}</b></button>`;
+    A.$$('#b-quick [data-go]', root).forEach((b) => {
+      b.onclick = () => { if (b.dataset.go === 'dex') { A.show('fleet'); A.views.fleet.dex(); } else A.show(b.dataset.go); };
+    });
+  }
+
   function renderClock(now) {
     const c = T.clockParts(now || T.now());
     A.$('#b-clock', root).innerHTML = `<b>${c.hm}</b><small>${c.ampm}</small>${A.liveBadge(A.state.busUpdated, now || T.now())}`;
@@ -145,8 +159,11 @@
     const S = A.state;
     const now = T.now();
     A.$('#b-place', root).textContent = A.settings.get('place');
-    const first = S.boards.find((b) => b.name);
-    A.$('#b-sub', root).textContent = `${A.settings.get('route') || 'All routes'}${first ? ' · ' + first.name : ''}`;
+    const hello = A.greeting(), greet = A.$('#b-greet', root);
+    greet.textContent = hello + ',';
+    greet.title = A.GREETING_MEANS[hello] || '';
+    A.$('#b-sub', root).textContent = A.vibe();
+    renderQuick();
     renderClock(now);
     const err = A.$('#b-error', root);
     err.hidden = !S.busError;

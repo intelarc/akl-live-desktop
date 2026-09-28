@@ -114,6 +114,9 @@ window.AKL = window.AKL || {};
     trainLines: [0, 1, 2],
     liveTrains: false,
     view: 'buses',
+    palette: 'waitemata', // one of A.PALETTES, each after something Auckland
+    kiwi: true,           // te reo greetings and a bit of local slang
+    spotted: {},          // the fleet dex: model id -> { n, first, last, no }
   };
   let store = {};
   try { store = JSON.parse(localStorage.getItem('akl.settings') || '{}'); } catch (e) { store = {}; }
@@ -142,14 +145,50 @@ window.AKL = window.AKL || {};
     const t = A.settings.get('theme');
     return t === 'dark' || (t === 'system' && media.matches);
   };
+  // ---------- colour themes, as in the Android app, each after something Auckland ----------
+  A.PALETTES = [
+    ['waitemata', 'Waitematā', 'Harbour blue, AT\'s own', '#235EA8'],
+    ['pohutukawa', 'Pōhutukawa', 'Summer crimson', '#B3261E'],
+    ['kawakawa', 'Kawakawa', 'Bush green', '#2E7D4F'],
+    ['kowhai', 'Kōwhai', 'Spring gold', '#8C6200'],
+    ['rangitoto', 'Rangitoto', 'Volcanic slate', '#4F5B73'],
+    ['tui', 'Tūī', 'Iridescent teal', '#1E5E6E'],
+  ];
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const mix = (a, b, t) => '#' + rgb(a).map((x, i) => Math.round(x + (rgb(b)[i] - x) * t).toString(16).padStart(2, '0')).join('');
+  const rgba = (h, a) => `rgba(${rgb(h).join(', ')}, ${a})`;
+  /** The page's colours for a palette (Waitematā is the stylesheet's own). */
+  function paletteVars(pri, dark) {
+    if (dark) {
+      const surf = mix('#12151C', pri, 0.16);
+      return { '--bg': mix('#090B10', pri, 0.1), '--bg2': mix('#0C0F15', pri, 0.13), '--surface': surf, '--surface2': mix('#181C25', pri, 0.18),
+               '--line': mix('#232835', pri, 0.24), '--text': mix('#E6E8EE', pri, 0.06), '--muted': mix('#A6ABB8', pri, 0.12), '--faint': mix('#717786', pri, 0.12),
+               '--accent': mix(pri, '#FFFFFF', 0.48), '--accent-soft': mix('#12151C', pri, 0.45), '--on-accent': mix(pri, '#000000', 0.66),
+               '--blue': mix(pri, '#FFFFFF', 0.48), '--glass': rgba(surf, 0.9) };
+    }
+    return { '--bg': mix('#FFFFFF', pri, 0.075), '--bg2': mix('#FFFFFF', pri, 0.11), '--surface': '#FFFFFF', '--surface2': mix('#FFFFFF', pri, 0.045),
+             '--line': mix('#FFFFFF', pri, 0.14), '--text': mix('#1A1C22', pri, 0.35), '--muted': mix('#5A5E6A', pri, 0.3), '--faint': mix('#8A8F9C', pri, 0.25),
+             '--accent': pri, '--accent-soft': mix(pri, '#FFFFFF', 0.83), '--on-accent': '#FFFFFF', '--blue': pri, '--glass': 'rgba(255, 255, 255, .88)' };
+  }
+  const VARS = Object.keys(paletteVars('#235EA8', false));
+  function applyPalette(dark) {
+    const p = A.PALETTES.find((x) => x[0] === A.settings.get('palette')) || A.PALETTES[0];
+    const st = document.documentElement.style;
+    VARS.forEach((k) => st.removeProperty(k));
+    if (p[0] === 'waitemata') return;
+    const v = paletteVars(p[3], dark);
+    VARS.forEach((k) => st.setProperty(k, v[k]));
+  }
+
   A.applyTheme = function () {
     document.documentElement.dataset.theme = A.isDark() ? 'dark' : 'light';
+    applyPalette(A.isDark());
     if (A.desktop && A.desktop.flags && A.desktop.flags.mica && !document.body.classList.contains('mini')) document.documentElement.classList.add('mica');
     if (A.desktop) A.desktop.setTheme(A.settings.get('theme'), A.isDark());
     A.emit('theme', A.isDark());
   };
   media.addEventListener('change', () => { if (A.settings.get('theme') === 'system') A.applyTheme(); });
-  A.on('settings', (k) => { if (k === 'theme' || k === '*') A.applyTheme(); });
+  A.on('settings', (k) => { if (k === 'theme' || k === 'palette' || k === '*') A.applyTheme(); });
 
   // ---------- colours ----------
   A.pal = {

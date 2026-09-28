@@ -4,7 +4,7 @@
   const esc = A.esc, T = A.time;
   const VIEWS = [
     ['buses', 'Buses'], ['plan', 'Directions'], ['stops', 'Stops'], ['trains', 'Trains'], ['live', 'Live'],
-    ['fleet', 'Fleet'], ['alerts', 'Alerts'], ['settings', 'Settings'],
+    ['routes', 'Routes'], ['fleet', 'Fleet'], ['alerts', 'Alerts'], ['settings', 'Settings'],
   ];
   const mounted = {};
   let current = null;

@@ -227,3 +227,51 @@ html.mica .side-next, html.mica .search-nav { background: color-mix(in srgb, var
 .wl-msg.bad { color: #E0412F; }
 .wl-skip { align-self: flex-start; background: none; border: 0; padding: 4px 0; color: var(--text); font: 600 14px var(--font); text-decoration: underline; cursor: pointer; }
 .wl-card small { color: var(--faint); }
+
+
+/* ---------- Android-style home: greeting, vibe and shortcuts ---------- */
+.greet { color: var(--accent); font: 700 17px var(--display); margin-bottom: 2px; cursor: help; }
+.page-head .vibe { font-size: 15px; }
+.pill-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.quick-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.qchip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: transparent; border: 1px solid var(--line); color: var(--text); font: 600 13.5px var(--font); cursor: pointer; }
+.qchip:hover { border-color: var(--accent); background: var(--accent-soft); }
+.qchip b { color: var(--accent); }
+
+/* ---------- colour themes ---------- */
+.palettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.pal-opt { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface2); text-align: left; cursor: pointer; }
+.pal-opt i { width: 26px; height: 26px; border-radius: 50%; background: var(--c); flex: none; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .25); }
+.pal-opt span { display: flex; flex-direction: column; min-width: 0; }
+.pal-opt b { font-weight: 700; }
+.pal-opt small { color: var(--muted); font-size: 12px; }
+.pal-opt.on { border-color: var(--c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent); }
+
+/* ---------- routes ---------- */
+.route-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; }
+.route-card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid transparent; box-shadow: var(--shadow); text-align: left; cursor: pointer; }
+.route-card:hover { border-color: var(--accent); }
+.route-card > span:nth-child(2) { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.route-card b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-card small { color: var(--muted); }
+.route-card .chev { color: var(--faint); font-size: 22px; }
+
+/* ---------- the fleet dex ---------- */
+.h1-row { display: flex; align-items: center; gap: 16px; }
+.dex-rank { border-radius: var(--radius); padding: 20px 22px; background: var(--accent-soft); display: flex; flex-direction: column; gap: 12px; }
+.dex-rank h2 { margin: 0; font: 900 24px var(--display); }
+.dex-rank p { margin: 4px 0 0; color: var(--muted); }
+.dex-bar { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 22%, transparent); overflow: hidden; }
+.dex-bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.dex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.dex-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 12px; text-align: center; background: var(--surface2); border: 1px solid transparent; cursor: pointer; }
+.dex-card.got { background: var(--surface); }
+.dex-card:hover { border-color: var(--accent); }
+.dex-pic { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: var(--bg2); margin-bottom: 6px; display: grid; place-items: center; }
+.dex-pic .portrait.big { width: 100%; height: 100%; border-radius: 0; }
+.dex-card:not(.got) .dex-pic canvas { opacity: .18; filter: grayscale(1); }
+.dex-pic .q { position: absolute; font: 900 40px var(--display); color: var(--muted); }
+.dex-card small { color: var(--muted); font-size: 12px; }
+.dex-seen { display: inline-flex; align-items: center; gap: 5px; color: var(--text) !important; }
+.dex-seen i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+#f-dex-reset { align-self: flex-start; }

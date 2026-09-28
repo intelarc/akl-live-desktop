@@ -62,7 +62,11 @@
 
           <section class="card"><h2>Appearance</h2>
             <div class="row-label">Theme</div>${seg('s-theme', S.get('theme'), [['system', 'Match Windows'], ['light', 'Light'], ['dark', 'Dark']])}
+            <div class="row-label">Colour theme</div>
+            <div class="palettes" id="s-palette">${A.PALETTES.map(([id, name, blurb, col]) =>
+              `<button class="pal-opt${S.get('palette') === id ? ' on' : ''}" data-p="${id}" style="--c:${col}"><i></i><span><b>${name}</b><small>${blurb}</small></span></button>`).join('')}</div>
             <div class="row-label">Maps</div>${seg('s-basemap', S.get('basemap'), [['satellite', 'Satellite'], ['streets', 'Street map']])}
+            ${toggle('s-kiwi', S.get('kiwi') !== false, 'Kiwi mode', 'Te reo greetings (Mōrena, Kia ora, Pō mārie) and a bit of local slang, like the Android app.')}
           </section>
 
           ${A.desktop ? `<section class="card"><h2>Desktop</h2>
@@ -83,7 +87,7 @@
           <section class="card about"><h2>About</h2>
             <div class="about-row"><img src="assets/icon.png" alt=""><div><b>AKL Live for Windows</b><small id="s-version">${A.desktop ? '' : 'Browser preview'}</small></div></div>
             <p class="help">Live data from the Auckland Transport developer API; not affiliated with Auckland Transport. Maps by MapLibre with imagery from Esri or LINZ and streets from OpenFreeMap / OpenStreetMap. Weather by Open-Meteo.com (CC BY 4.0). Bus models and fleet numbers from the AT Metro Wiki (CC BY-SA). The train map is drawn from the track shapes in AT's timetable; the bus scenes are inspired by MSMGreen/at-departure-board.</p>
-            <div class="keys-help"><b>Shortcuts</b><span><kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>8</kbd> switch screens</span><span><kbd>Ctrl</kbd>+<kbd>K</kbd> search</span><span><kbd>Ctrl</kbd>+<kbd>D</kbd> directions</span><span><kbd>Ctrl</kbd>+<kbd>R</kbd> refresh</span>
+            <div class="keys-help"><b>Shortcuts</b><span><kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> switch screens</span><span><kbd>Ctrl</kbd>+<kbd>K</kbd> search</span><span><kbd>Ctrl</kbd>+<kbd>D</kbd> directions</span><span><kbd>Ctrl</kbd>+<kbd>R</kbd> refresh</span>
               <span><kbd>Ctrl</kbd>+<kbd>F</kbd> search every bus</span><span><kbd>Ctrl</kbd>+<kbd>M</kbd> desk board</span><span><kbd>F11</kbd> full screen</span><span><kbd>Esc</kbd> close</span></div>
           </section>
         </div>
@@ -124,6 +128,8 @@
     };
     A.$$('#s-theme button', root).forEach((b) => { b.onclick = () => { S.set('theme', b.dataset.v); render(); }; });
     A.$$('#s-basemap button', root).forEach((b) => { b.onclick = () => { S.set('basemap', b.dataset.v); render(); }; });
+    A.$$('#s-palette [data-p]', root).forEach((b) => { b.onclick = () => { S.set('palette', b.dataset.p); render(); }; });
+    A.$('#s-kiwi', root).onchange = (e) => { S.set('kiwi', e.target.checked); A.refresh('buses'); };
     A.$('#s-savekeys', root).onclick = () => {
       S.set('apiKey', A.$('#s-key', root).value.trim());
       S.set('linzKey', A.$('#s-linz', root).value.trim());

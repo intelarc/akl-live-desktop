@@ -478,12 +478,14 @@
     h += `<div class="it-actions">
       <button class="btn primary" id="p-remind">${A.icon('bell', 16)} ${reminders.has(key(it)) ? 'Reminder set' : 'Remind me to leave'}</button>
       ${first && live[first.tripId] && live[first.tripId].v ? `<button class="btn" id="p-track">${A.icon('follow', 16)} Track my ${first.mode}</button>` : ''}
-      <button class="btn" id="p-copy">Copy directions</button></div>`;
+      <button class="btn" id="p-copy">Copy directions</button>
+      <button class="btn" id="p-cal">📅 Add to calendar</button></div>`;
     box.innerHTML = h;
     box.scrollTop = scroll;
     A.$('#p-back', box).onclick = () => { sel = -1; render(); drawJourney(true); };
     A.$('#p-remind', box).onclick = () => remind(it);
     A.$('#p-copy', box).onclick = () => copy(it);
+    A.$('#p-cal', box).onclick = () => calendar(it);
     const tr = A.$('#p-track', box);
     if (tr) tr.onclick = () => { const v = live[first.tripId].v; map.flyTo(v.lon, v.lat, 15.5); map.select(first.tripId); };
     A.paintPortraits(box);
@@ -553,13 +555,33 @@
     A.toast(`I'll remind you at ${T.clock(leave)}`);
     render(true);
   }
-  function copy(it) {
+  function tripLines(it) {
     const lines = [`${from.name} → ${to.name}: ${T.clock(it.start)} – ${T.clock(it.end)} (${dur(it.end - it.start)})`];
     for (const l of it.legs) {
       if (l.mode === 'walk') lines.push(`• Walk ${dist(l.dist)} to ${l.to.name}`);
       else lines.push(`• ${T.clock(l.start)} ${l.mode} ${l.route.short} to ${A.cleanHeadsign(l.headsign)} from ${l.from.name}${l.from.code ? ' (stop ' + l.from.code + ')' : ''}, get off at ${l.to.name} ${T.clock(l.end)}`);
     }
-    navigator.clipboard.writeText(lines.join('\n')).then(() => A.toast('Directions copied'), () => A.toast('Couldn\'t copy'));
+    return lines;
+  }
+  function copy(it) {
+    navigator.clipboard.writeText(tripLines(it).join('\n')).then(() => A.toast('Directions copied'), () => A.toast('Couldn\'t copy'));
+  }
+  /** The trip as a calendar event (.ics), with a nudge five minutes before it's time to go. */
+  function calendar(it) {
+    const stamp = (sec) => new Date(sec * 1000).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const text = (s) => String(s).replace(/\\/g, '\\\\').replace(/[,;]/g, (c) => '\\' + c).replace(/\n/g, '\\n');
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//AKL Live//Windows//EN', 'BEGIN:VEVENT',
+      `UID:${Date.now()}-${Math.random().toString(36).slice(2)}@akl-live`, `DTSTAMP:${stamp(T.now())}`,
+      `DTSTART:${stamp(it.start)}`, `DTEND:${stamp(it.end)}`, `SUMMARY:${text('Trip to ' + to.name)}`, `LOCATION:${text(from.name)}`,
+      `DESCRIPTION:${text(tripLines(it).join('\n'))}`, 'BEGIN:VALARM', 'TRIGGER:-PT5M', 'ACTION:DISPLAY', `DESCRIPTION:${text('Time to leave for ' + to.name)}`,
+      'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+    a.download = `Trip to ${to.name.replace(/[\\/:*?"<>|]/g, '')}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    A.toast('Open the file to add it to your calendar');
   }
 
   (A.views = A.views || {}).plan = V;

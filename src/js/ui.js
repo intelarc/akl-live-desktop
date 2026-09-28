@@ -25,6 +25,7 @@
     follow: '<path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm-1-7h2v3.1A8 8 0 0 1 19.9 11H23v2h-3.1A8 8 0 0 1 13 19.9V23h-2v-3.1A8 8 0 0 1 4.1 13H1v-2h3.1A8 8 0 0 1 11 4.1V1Zm1 5a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/>',
     zoomIn: '<path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/>',
     zoomOut: '<path d="M5 11h14v2H5z"/>',
+    routes: '<path d="M19 15.2V7a4 4 0 0 0-8 0v10a2 2 0 0 1-4 0V8.8A3 3 0 1 0 5 8.8V17a4 4 0 0 0 8 0V7a2 2 0 0 1 4 0v8.2a3 3 0 1 0 2 0Z"/>',
     fit: '<path d="M4 4h6v2H6v4H4V4Zm10 0h6v6h-2V6h-4V4ZM4 14h2v4h4v2H4v-6Zm14 0h2v6h-6v-2h4v-4Z"/><circle cx="12" cy="12" r="2.5"/>',
   };
   A.icon = (name, size) => `<svg class="ico" viewBox="0 0 24 24" width="${size || 20}" height="${size || 20}" fill="currentColor" aria-hidden="true">${P[name] || ''}</svg>`;
@@ -54,6 +55,52 @@
       <span class="vr-text"><b>${esc(m ? m.short : `${info.operator} ${info.fleetNo}`)}</b>
         <small>${esc(m ? [m.maker, info.operator, info.fleetNo].join(' · ') : 'Model not identified yet')}</small></span>
       <span class="vr-chips">${chips}</span><span class="chev">›</span></button>`;
+  };
+
+  // ---------- hello, and how things are looking (the Android app's words) ----------
+  const MATARIKI = ['2026-07-10', '2027-06-25', '2028-07-14', '2029-07-06', '2030-06-21'];
+  /** A day worth a different hello: [te reo, English, the line under it]. */
+  function special() {
+    const d = A.time.date(), md = d.slice(5);
+    if (MATARIKI.includes(d)) return ['Mānawatia a Matariki', 'Happy Matariki', 'Happy Māori New Year ✨'];
+    return { '01-01': ['Ngā mihi o te Tau Hou', 'Happy New Year', 'New year, same bus stop 🎆'], '02-06': ['', '', 'Happy Waitangi Day'],
+             '04-01': ['', '', 'Every bus is on time today. (April Fools 🤡)'], '10-31': ['', '', 'Watch out for ghost buses 👻'],
+             '12-25': ['Meri Kirihimete', 'Merry Christmas', 'It\'s a public holiday: check the times 🎄'], '12-31': ['', '', 'Last buses of the year 🎉'] }[md] || null;
+  }
+  A.GREETING_MEANS = {
+    'Mōrena': 'Mōrena: good morning', 'Kia ora': 'Kia ora: hello (and thanks, and cheers)', 'Ahiahi mārie': 'Ahiahi mārie: good evening',
+    'Pō mārie': 'Pō mārie: good night', 'Mānawatia a Matariki': 'Mānawatia a Matariki: celebrate Matariki, the Māori New Year',
+    'Ngā mihi o te Tau Hou': 'Ngā mihi o te Tau Hou: happy New Year', 'Meri Kirihimete': 'Meri Kirihimete: merry Christmas',
+  };
+  /** Kia ora, in the right words for the time of day (or the day). */
+  A.greeting = function () {
+    const kiwi = A.settings.get('kiwi') !== false;
+    const sp = special();
+    if (sp && sp[0]) return kiwi ? sp[0] : sp[1];
+    const h = A.time.parts(Date.now()).h;
+    if (kiwi) return h >= 5 && h <= 11 ? 'Mōrena' : h <= 16 && h >= 12 ? 'Kia ora' : h >= 17 && h <= 20 ? 'Ahiahi mārie' : 'Pō mārie';
+    return h >= 5 && h <= 11 ? 'Good morning' : h <= 16 && h >= 12 ? 'Good afternoon' : h >= 17 && h <= 20 ? 'Good evening' : 'Night owl';
+  };
+  /** A line about how things are looking, from the live data. */
+  A.vibe = function () {
+    const S = A.state, k = A.settings.get('kiwi') !== false, now = A.time.now(), w = S.weather;
+    if (!A.api.key()) return 'Add your free AT key to get going';
+    const next = S.boards.map((b) => (b.departures || []).find((d) => d.expected >= now - 30)).filter(Boolean).sort((a, b) => a.expected - b.expected)[0];
+    const info = next && next.vehicle && A.fleet.info(next.vehicle.label);
+    const model = info && info.model;
+    const late = next && next.live ? Math.round((next.delay || 0) / 60) : 0;
+    const rainSoon = w && (w.hourly || []).slice(0, 3).some((h) => h.rainChance >= 60);
+    const hour = A.time.parts(Date.now()).h;
+    if (!next) return k ? 'Quiet out there. No buses for a bit' : 'No buses coming soon';
+    if (next.cancelled) return k ? `Your ${next.route} got cancelled. Gutted.` : `Your next ${next.route} is cancelled`;
+    if (late >= 5) return k ? `The ${next.route}'s running ${late} min late, eh` : `The ${next.route} is ${late} min late`;
+    if (special()) return special()[2];
+    if (w && w.rain >= 2) return k ? 'Bit wet out there. Grab a brolly ☔' : 'It\'s raining';
+    if (model && model.doubleDeck) return 'Double-decker incoming: front seat upstairs? 🚌';
+    if (model && model.electric) return `Your next ${next.route} is electric ⚡`;
+    if (rainSoon) return k ? 'Rain\'s on the way. Brolly time? ☂' : 'Rain later';
+    if (hour < 6 || hour > 21) return k ? 'Night owl mode 🦉' : 'Late services';
+    return k ? `Sweet as, the ${next.route} is on time` : `The ${next.route} is on time`;
   };
 
   /** Draws every portrait canvas inside root (after it's been put on the page). */
