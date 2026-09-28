@@ -799,11 +799,18 @@ function routesList() {
   const by = new Map();
   for (let p = 0; p < N.patRoute.length; p++) {
     const r = N.patRoute[p], short = N.routeShort[r];
-    const o = by.get(short) || { short, type: N.routeType[r], long: N.routeLong[r], trips: 0 };
+    const o = by.get(short) || { short, type: N.routeType[r], long: N.routeLong[r], trips: 0, heads: new Map() };
     o.trips += N.patTripStart[p + 1] - N.patTripStart[p];
+    // where its trips say they're going, to describe the route (AT's long names are mostly just the number)
+    for (let k = N.patTripStart[p]; k < N.patTripStart[p + 1]; k++) {
+      const h = N.tripHead[N.patTrip[k]];
+      if (h) o.heads.set(h, (o.heads.get(h) || 0) + 1);
+    }
     by.set(short, o);
   }
-  return Array.from(by.values()).sort((a, b) => a.short.localeCompare(b.short, undefined, { numeric: true }));
+  return Array.from(by.values()).map((o) => Object.assign(o, {
+    heads: Array.from(o.heads.entries()).sort((a, b) => b[1] - a[1]).slice(0, 2).map((e) => e[0]),
+  })).sort((a, b) => a.short.localeCompare(b.short, undefined, { numeric: true }));
 }
 
 /** A route's shapes and main stops each way, for drawing it. */

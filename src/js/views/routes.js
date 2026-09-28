@@ -41,6 +41,15 @@
     return r.type === 4 ? A.MODE_COLOR.ferry : A.pal.atBlue;
   }
   const kind = (t) => (t === 2 ? 'Train' : t === 4 ? 'Ferry' : 'Bus');
+  /** Where it goes: its name if AT gives a real one, else the ends its trips head for ("Britomart ↔ Waikowhai"). */
+  function describe(r) {
+    if (r.long && r.long !== r.short && !/^[A-Z0-9-]+$/.test(r.long)) return r.long;
+    const li = r.type === 2 ? A.NET.lineIds.indexOf(r.short) : -1;
+    if (li >= 0) return A.NET.lineNames[li] + ' line';
+    if (r.short === 'HUIA') return 'Te Huia: The Strand ↔ Hamilton';
+    const ends = Array.from(new Set((r.heads || []).map((h) => A.cleanHeadsign(h)).filter(Boolean)));
+    return ends.length > 1 ? ends.join(' ↔ ') : ends.length ? 'to ' + ends[0] : kind(r.type) + ' ' + r.short;
+  }
 
   function render() {
     const grid = A.$('#r-grid', root);
@@ -57,7 +66,7 @@
       (!q || r.short.toLowerCase().startsWith(q) || (r.long || '').toLowerCase().includes(q))).sort((a, b) => a.type - b.type || natural(a, b));
     A.$('#r-sub', root).textContent = `${list.length} routes running today · ${list.reduce((t, r) => t + (r.trips || 0), 0).toLocaleString()} trips`;
     grid.innerHTML = shown.map((r) => `<button class="route-card" data-r="${esc(r.short)}">${A.routeBadge(r.short, colour(r), true)}` +
-      `<span><b>${esc(r.long && r.long !== r.short ? r.long : kind(r.type) + ' ' + r.short)}</b><small>${kind(r.type)} · ${r.trips} trip${r.trips === 1 ? '' : 's'} today</small></span>` +
+      `<span><b>${esc(describe(r))}</b><small>${kind(r.type)} · ${r.trips} trip${r.trips === 1 ? '' : 's'} today</small></span>` +
       `<span class="chev">›</span></button>`).join('') || '<div class="empty">No routes match that.</div>';
     A.$$('.route-card', grid).forEach((b) => { b.onclick = () => { A.show('live'); A.views.live.route(b.dataset.r); }; });
   }
