@@ -1,5 +1,5 @@
 // Real maps (MapLibre GL) in full detail: Esri or LINZ aerials with streets,
-// place names and buildings over them (or OpenFreeMap's street map with hill
+// place names over them (or OpenFreeMap's street map with hill
 // shading), every stop in Auckland, journeys, routes, and a crowd of a
 // thousand live vehicles that glide between GPS fixes. Always flat: no 3D.
 (function (A) {
@@ -14,7 +14,7 @@
 
   const nameExpr = ['coalesce', ['get', 'name:en'], ['get', 'name_en'], ['get', 'name']];
 
-  /** Aerial photos with the streets drawn in: roads, names, places and buildings. */
+  /** Aerial photos with the streets drawn in: roads, names and places (the photos show the buildings). */
   function satellite(dark) {
     const linz = (A.settings.get('linzKey') || '').trim();
     const tiles = linz
@@ -39,8 +39,6 @@
           filter: ['match', ['get', 'class'], ['secondary', 'tertiary', 'minor', 'service'], true, false],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': 'rgba(255,255,255,0.28)', 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 0.6, 18, 4] } },
-        { id: 'hy-buildings', type: 'fill', source: 'omt', 'source-layer': 'building', minzoom: 14.5,
-          paint: { 'fill-color': dark ? '#9fb1cc' : '#e8eef6', 'fill-opacity': 0.3, 'fill-outline-color': dark ? 'rgba(159,177,204,0.7)' : 'rgba(232,238,246,0.8)' } },
         { id: 'hy-water-names', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 11,
           layout: { 'text-field': nameExpr, 'text-font': FONT_R, 'text-size': 12, 'text-letter-spacing': 0.1 },
           paint: { 'text-color': '#bfe3ff', 'text-halo-color': halo, 'text-halo-width': 1.4 } },

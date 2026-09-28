@@ -4,7 +4,7 @@
   'use strict';
   const esc = A.esc, T = A.time;
   const V = {};
-  let root, filter = 'all', sort = 'out', openId = null, map = null, selected = null, portraitRun = false, fitted = null;
+  let root, filter = 'all', sort = 'out', openId = null, map = null, selected = null, portraitRun = false, fitted = null, heroPhoto = false;
 
   V.mount = function (el) {
     root = el;
@@ -22,7 +22,7 @@
   /** Open a model's page (or the unidentified buses with "unknown"); null goes back to the list. */
   V.open = function (id) {
     openId = id;
-    selected = null; fitted = null;
+    selected = null; fitted = null; heroPhoto = false;
     A.$('#f-list', root).hidden = !!id;
     A.$('#f-model', root).hidden = !id;
     if (id) {
@@ -86,17 +86,16 @@
   function card(m, live) {
     const ops = A.fleet.numbers(m).map(([op]) => `<span class="op-tag" style="--c:${A.fleet.color(A.fleet.codeOf(op))}">${esc(op)}</span>`).join('');
     return `<button class="card model-card" data-open="${m.id}">
-      <canvas class="portrait big" data-portrait="${m.id}"></canvas>
-      <div class="mc-text"><b>${esc(m.name)}</b><small>${esc(m.kind)}</small><div class="op-tags">${ops}</div></div>
-      <div class="mc-count${live.length ? '' : ' none'}"><b>${live.length}</b><small>${live.length ? '<i></i>out now' : 'none out'}</small></div></button>`;
+      <div class="mc-pic">${A.picHtml(m, 'portrait big')}
+        <span class="mc-badge${live.length ? '' : ' none'}"><i></i>${live.length ? `${live.length} out now` : 'None out now'}</span>${A.creditHtml(m)}</div>
+      <div class="mc-text"><b>${esc(m.name)}</b><small>${esc(m.kind)}</small><div class="op-tags">${ops}</div></div></button>`;
   }
   function unknownCard(list) {
     const by = {};
     list.forEach((b) => { by[b.info.operator] = (by[b.info.operator] || 0) + 1; });
     return `<button class="card model-card unknown" data-open="unknown">
-      <div class="q">?</div>
-      <div class="mc-text"><b>Not identified yet</b><small>Fleet numbers the app's list doesn't cover: ${Object.keys(by).map((k) => `${esc(k)} ${by[k]}`).join(', ')}</small></div>
-      <div class="mc-count"><b>${list.length}</b><small><i></i>out now</small></div></button>`;
+      <div class="mc-pic"><div class="q">?</div><span class="mc-badge"><i></i>${list.length} out now</span></div>
+      <div class="mc-text"><b>Not identified yet</b><small>Fleet numbers the app's list doesn't cover: ${Object.keys(by).map((k) => `${esc(k)} ${by[k]}`).join(', ')}</small></div></button>`;
   }
   function operators() {
     const L = A.state.live;
@@ -127,6 +126,8 @@
     if (first) {
       page.innerHTML = `
         <div class="hero"><canvas id="f-hero"></canvas>
+          <div class="hero-photo" hidden><div class="pic-blur"></div><img alt="" referrerpolicy="no-referrer"></div>
+          <a class="pic-credit" hidden target="_blank" rel="noopener"></a>
           <button class="icon-btn back" id="f-back" title="Back (Esc)">${A.icon('back')}</button></div>
         <div class="model-body">
           <div class="model-main">
@@ -147,6 +148,7 @@
             <div class="bus-list" id="f-list-rows"></div></section>
         </div>`;
       A.$('#f-back', page).onclick = () => V.open(null);
+      if (m) A.photos.forModel(m).then((p) => heroFor(m, p));
       if (map) { map.destroy(); map = null; }
       map = new A.MapView(A.$('#f-map', page), {
         cooperativeGestures: true,
@@ -204,9 +206,27 @@
     A.$('#f-cardx', card).onclick = () => pick(null);
   }
 
-  // the hero bus drives on the spot
+  /** The model's real photo across the top: whole, over a blurred copy of itself. */
+  function heroFor(m, p) {
+    if (!p || openId !== m.id) return;
+    const hero = A.$('.hero', root), img = A.$('.hero-photo img', hero);
+    img.onload = () => {
+      if (openId !== m.id) return;
+      A.$('.pic-blur', hero).style.backgroundImage = `url("${p.url.replace(/"/g, '%22')}")`;
+      A.$('.hero-photo', hero).hidden = false;
+      const credit = A.$('.pic-credit', hero);
+      credit.textContent = p.credit;
+      if (p.page) credit.href = p.page;
+      credit.hidden = false;
+      heroPhoto = true;                                      // no need to draw the bus any more
+    };
+    img.alt = m.name;
+    img.src = p.url;
+  }
+
+  // the hero bus drives on the spot (until its photo is in)
   function animate(ts) {
-    if (!portraitRun || !openId) return;
+    if (!portraitRun || !openId || heroPhoto) return;
     const c = A.$('#f-hero', root);
     if (c) {
       const { ctx, w, h } = A.fitCanvas(c);

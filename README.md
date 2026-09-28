@@ -2,14 +2,28 @@
 
 The desktop version of [AKL Live](https://github.com/intelarc/akl-live-android):
 live Auckland buses, trains and ferries, a journey planner, and detailed
-maps, with the AT API key built in. Private.
+maps, for Windows.
+
+**[See it in screenshots →](https://intelarc.github.io/akl-live-desktop/)**
+
+<!-- screenshots -->
 
 ## Install
 
-Download `AKL-Live-Setup-*.exe` from **Releases → latest** and run it. It
-installs for your account (no admin needed), adds **AKL Live** to the Start
-menu and the desktop, and shows up in Settings → Apps for uninstalling.
-Running a newer installer updates it in place and keeps your settings.
+1. Download `AKL-Live-Setup-*.exe` from
+   **[Releases → latest](https://github.com/intelarc/akl-live-desktop/releases/latest)**
+   and run it. It installs for your account (no admin needed), adds
+   **AKL Live** to the Start menu and the desktop, and shows up in
+   Settings → Apps for uninstalling. Running a newer installer updates it in
+   place and keeps your settings.
+2. The first time it opens, it asks for an **Auckland Transport API key**.
+   They're free: sign up at [dev-portal.at.govt.nz](https://dev-portal.at.govt.nz),
+   subscribe to AT's GTFS and real-time APIs, and paste your primary key in.
+   AKL Live checks it with AT and keeps it on your computer. Directions and
+   the maps work before you add one.
+
+Windows may warn that the installer isn't signed: choose **More info → Run
+anyway**.
 
 ## What's in it
 
@@ -59,13 +73,14 @@ Running a newer installer updates it in place and keeps your settings.
     each way and its stops.
   - Click a vehicle for its destination, delay, speed, load and model, the
     rest of its route with its next stops and times, and **Follow** it.
-- **Fleet.** Every bus model on the road and how many are out, each with its
-  own page and live map.
+- **Fleet.** Every bus model on the road, with a real photo of each and how
+  many are out, and a page per model with its specs, fleet numbers and a live
+  map. Photos come from the AT Metro Wiki (CC BY-SA) or Wikimedia Commons, credited on each.
 - **Alerts.** Every current and upcoming disruption: detours, moved stops, no
   service. Yours come first, with a badge in the sidebar.
 - **Maps, in detail.**
   - Satellite photos (Esri, or LINZ's 7.5 cm aerials with a free key) with
-    roads, street names, suburbs, places and buildings drawn over them,
+    roads, street names, suburbs and places drawn over them,
     or OpenFreeMap's street map with hillshading.
   - All 5,800 stops appear as you zoom in; click one for its departures.
 - **Search everything** (Ctrl+K): places and addresses (for directions),
@@ -113,13 +128,12 @@ platforms and lines, in AT's GTFS colours), the 27H's stops and the fleet list. 
 
 `python tools/make_icon.py` redraws the icons. `python tools/dev_server.py`
 serves `src/` for trying things in a browser, and proxies the timetable
-download. That needs `src/js/keys.js` (gitignored), holding
-`window.AKL_KEYS = { at: "…" }`.
+download. For live data there, add your key in Settings, or put it in
+`src/js/keys.js` (gitignored) as `window.AKL_KEYS = { at: "…" }`.
 
 ## Building
 
 GitHub Actions (`.github/workflows/build.yml`) builds the installer on
-`windows-latest` on every push to `main`. It writes the `AT_API_KEY`
-repository secret into `src/js/keys.js`, then runs electron-builder (NSIS) and
-publishes the installer to the private `latest` release. Locally, with Node 22:
+`windows-latest` on every push to `main`, with electron-builder (NSIS), and
+publishes it to the `latest` release. No API key is built in. Locally, with Node 22:
 `npm install`, then `npm start` to run it or `npm run dist` for the installer.

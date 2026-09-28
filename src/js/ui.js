@@ -50,7 +50,7 @@
     const m = info.model;
     const chips = m ? (m.electric ? A.chip('⚡ Electric', 'ok') : '') + (m.doubleDeck ? A.chip('Double-decker', 'blue') : '') : '';
     return `<button class="vehicle-row${opts && opts.big ? ' big' : ''}" data-model="${m ? m.id : 'unknown'}" title="About this model">
-      <canvas class="portrait" data-portrait="${m ? m.id : ''}"></canvas>
+      ${A.picHtml(m, 'portrait')}
       <span class="vr-text"><b>${esc(m ? m.short : `${info.operator} ${info.fleetNo}`)}</b>
         <small>${esc(m ? [m.maker, info.operator, info.fleetNo].join(' · ') : 'Model not identified yet')}</small></span>
       <span class="vr-chips">${chips}</span><span class="chev">›</span></button>`;
@@ -59,6 +59,7 @@
   /** Draws every portrait canvas inside root (after it's been put on the page). */
   A.paintPortraits = function (root) {
     for (const c of A.$$('canvas[data-portrait]', root)) {
+      A.photoFor(c);                                           // the real photo replaces the drawing once it's in
       if (!c.getBoundingClientRect().width) continue;          // hidden: painted when its screen shows
       const { ctx, w, h } = A.fitCanvas(c);
       A.drawPortrait(ctx, w, h, A.fleet.model(c.dataset.portrait), 0, false);
@@ -97,7 +98,8 @@
       const secs = +e.dataset.exp - now;
       const text = e.dataset.cancelled ? 'Cancelled' : A.countdown(secs);
       if (e.dataset.big != null) {
-        const [n, ...rest] = text.split(' ');
+        const long = !e.dataset.cancelled && secs >= 3600;
+        const [n, ...rest] = long ? [`${Math.floor(secs / 3600)}h`, `${Math.floor(secs % 3600 / 60)} min`] : text.split(' ');
         const num = e.querySelector('b'), unit = e.querySelector('small');
         if (num && num.textContent !== n) { num.textContent = n; num.classList.remove('roll'); void num.offsetWidth; num.classList.add('roll'); }
         if (unit) unit.textContent = rest.join(' ');

@@ -133,7 +133,7 @@
         if (d.cancelled || eta > lead || eta < 60 || alerted.has(d.tripId)) continue;
         alerted.add(d.tripId);
         const p = A.punctuality(d.live ? d.delay : null);
-        const leave = walk ? (eta - walk * 60 > 60 ? ` Leave in ${Math.round((eta - walk * 60) / 60)} min.` : ' Leave now.') : '';
+        const leave = walk ? (eta - walk * 60 > 60 ? ` Leave in ${A.countdown(eta - walk * 60)}.` : ' Leave now.') : '';
         const title = `${d.route} to ${d.headsign} in ${A.countdown(eta)}`;
         const body = `${b.name || 'Stop ' + b.code}: ${d.live ? p.text.toLowerCase() + ', live GPS' : 'scheduled'}.${leave}`;
         if (A.desktop) A.desktop.notify(title, body);

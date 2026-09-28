@@ -134,6 +134,7 @@
     A.gtfs.start();
     A.alerts.refresh();
     setInterval(() => { if (!document.hidden) A.alerts.refresh(); }, 5 * 60000);
+    setTimeout(() => A.photos.prefetch(), 5000);                // every model's photo, ready before it's needed
     A.on('alerts', () => {
       const n = A.alerts.mine().length;
       const b = A.$('#alert-badge');

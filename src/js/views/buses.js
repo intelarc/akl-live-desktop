@@ -51,6 +51,7 @@
     A.on('weather', renderWeather);
     A.on('alerts', renderAlerts);
     A.on('tick', renderClock);
+    A.on('settings', (k) => { if (k === 'apiKey' || k === 'stops' || k === 'route') { timetableAt = 0; loadToday(); } });
     A.on('settings', (k) => {
       if (k === 'basemap' || k === '*') { syncBasemap(); }
       if (k === 'stops' || k === 'route' || k === 'place' || k === 'alerts' || k === 'walkMin' || k === '*') { lanes = {}; A.$('#b-lanes', root).innerHTML = ''; render(); timetableAt = 0; }
@@ -209,7 +210,7 @@
     const walk = +A.settings.get('walkMin') || 0;
     if (walk && !d.cancelled) {
       const spare = d.expected - now - walk * 60;
-      if (spare > 60) facts.push(`Leave in ${Math.floor(spare / 60)} min (${walk} min walk)`);
+      if (spare > 60) facts.push(`Leave in ${A.countdown(spare)} (${walk} min walk)`);
       else if (spare > -30) facts.push(`<b class="leave">Leave now</b>`);
       else {
         // this one's gone for you: which one can you still make?

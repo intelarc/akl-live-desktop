@@ -164,7 +164,11 @@
     if (which === 'from') from = p; else to = p;
     A.places.remember(p);
     syncInputs();
-    if (from && to) run(); else A.$(which === 'from' ? '#p-to' : '#p-from', root).focus();
+    if (from && to) {
+      A.$$('.suggest', root).forEach((b) => { b.hidden = true; });
+      if (root.contains(document.activeElement)) document.activeElement.blur();
+      run();
+    } else A.$(which === 'from' ? '#p-to' : '#p-from', root).focus();
   }
   function setWhen(mode) {
     when.mode = mode;
