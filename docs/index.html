@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AKL Live for Windows</title>
+<meta name="description" content="Live Auckland buses, trains and ferries, a journey planner and detailed maps, for Windows.">
+<link rel="icon" href="screenshots/icon.png">
+<style>
+  :root {
+    --bg: #0B1220; --bg2: #0F1829; --surface: #141F35; --line: #243453;
+    --text: #E6ECF7; --muted: #A5B3CA; --accent: #8DB8F2; --blue: #235EA8;
+    --ew: #97C93D; --sc: #D52923; --ow: #00AEEF;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif; }
+  a { color: var(--accent); }
+  .wrap { width: min(1180px, 100% - 32px); margin: 0 auto; }
+  header.hero { padding: 72px 0 40px; background: radial-gradient(1200px 500px at 70% -10%, #1C3B6E 0%, transparent 60%), var(--bg); }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand img { width: 56px; height: 56px; border-radius: 14px; }
+  .brand b { font: 800 20px "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; }
+  h1 { font: 900 clamp(34px, 6vw, 60px)/1.05 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; margin: 28px 0 14px; letter-spacing: -.02em; }
+  .lede { font-size: clamp(17px, 2.2vw, 20px); color: var(--muted); max-width: 720px; margin: 0; }
+  .lines { display: flex; gap: 8px; margin: 22px 0 0; flex-wrap: wrap; }
+  .lines span { font: 800 13px system-ui; padding: 5px 12px; border-radius: 999px; color: #0B1220; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 30px 0 0; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 14px; font-weight: 700; text-decoration: none; border: 1px solid var(--line); color: var(--text); background: var(--surface); }
+  .btn.primary { background: var(--accent); color: #0B1B33; border-color: var(--accent); }
+  .note { color: var(--muted); font-size: 14px; margin-top: 14px; }
+  .shot { margin: 40px 0 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0, 0, 0, .5); background: #000; }
+  .shot img { display: block; width: 100%; height: auto; }
+  section { padding: 56px 0 8px; }
+  h2 { font: 800 clamp(24px, 3.4vw, 34px)/1.15 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; margin: 0 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 22px; max-width: 760px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+  figure { margin: 0; }
+  figure a { display: block; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #000; }
+  figure img { display: block; width: 100%; height: auto; transition: transform .25s ease; }
+  figure a:hover img { transform: scale(1.015); }
+  figcaption { color: var(--muted); font-size: 14.5px; margin-top: 10px; }
+  figcaption b { color: var(--text); }
+  .small { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+  .small figure { flex: 0 0 auto; }
+  ol.steps { color: var(--muted); padding-left: 22px; }
+  ol.steps li { margin: 6px 0; }
+  footer { border-top: 1px solid var(--line); margin-top: 60px; padding: 28px 0 48px; color: var(--muted); font-size: 14px; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } header.hero { padding-top: 40px; } }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="brand"><img src="screenshots/icon.png" alt=""><b>AKL Live for Windows</b></div>
+    <h1>Every bus, train and ferry in Tāmaki Makaurau, live on your desktop.</h1>
+    <p class="lede">Your buses counting down in a little scene under Auckland's real sky, a journey planner, the whole rail network drawn along the real tracks, all 600+ buses on one map, and a real photo of every bus model.</p>
+    <div class="lines"><span style="background:var(--ew)">East West</span><span style="background:var(--sc);color:#fff">South City</span><span style="background:var(--ow)">Onehunga West</span><span style="background:#B9C2CF">Te Huia</span></div>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/intelarc/akl-live-desktop/releases/latest">⬇ Download for Windows</a>
+      <a class="btn" href="https://github.com/intelarc/akl-live-desktop">View on GitHub</a>
+      <a class="btn" href="https://github.com/intelarc/akl-live-android">The Android app</a>
+    </div>
+    <p class="note">Free. Needs your own free Auckland Transport API key (<a href="https://dev-portal.at.govt.nz">dev-portal.at.govt.nz</a>); the app walks you through it. Not affiliated with Auckland Transport.</p>
+    <div class="shot"><img src="screenshots/02-buses.jpg" alt="The Buses screen: the 27H both ways, with live scenes, countdowns and the bus's real photo" width="1920" height="1080"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <h2>Your buses, at a glance</h2>
+    <p class="sub">A hello for the time of day, a line on how things look ("Sweet as, the 27H is on time"), and each direction with a live scene: the bus drives in as it counts down. Which bus it is, how full, how far away, and when to leave.</p>
+    <div class="grid">
+      <figure><a href="screenshots/03-buses-map.jpg"><img src="screenshots/03-buses-map.jpg" alt="The 27H's live map and the rest of today's timetable" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Your route, live.</b> Every bus heading your way on the map, and the rest of today's times.</figcaption></figure>
+      <figure><a href="screenshots/20-desk-board.png"><img src="screenshots/20-desk-board.png" alt="The desk board" loading="lazy" width="400" height="214"></a>
+        <figcaption><b>The desk board.</b> A small always-on-top board (Ctrl+M), plus a tray countdown and Windows alerts before your bus.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Directions, like AT's journey planner (but on your PC)</h2>
+    <p class="sub">Plan any trip by bus, train and ferry. The router runs on your computer over AT's full timetable, with live delays, the actual bus that's coming, walking directions, reminders and calendar events.</p>
+    <div class="grid">
+      <figure><a href="screenshots/04-directions.jpg"><img src="screenshots/04-directions.jpg" alt="Directions from Hillsborough to Auckland Airport" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Options, tagged.</b> Fastest, least walking, fewest changes, with the whole trip drawn along the real route.</figcaption></figure>
+      <figure><a href="screenshots/05-directions-steps.jpg"><img src="screenshots/05-directions-steps.jpg" alt="Step-by-step directions" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Step by step.</b> Every stop and time, turn-by-turn walking, live delays, "Remind me to leave" and "Add to calendar".</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ngā Tereina: the whole rail network, live</h2>
+    <p class="sub">Drawn from the track shapes in AT's timetable, in AT's own line colours. Lines on the same rails run side by side; every train sits where its GPS puts it, pointing the way it's heading.</p>
+    <div class="grid">
+      <figure><a href="screenshots/07-trains.jpg"><img src="screenshots/07-trains.jpg" alt="The train network diagram with live trains" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Every train, live.</b> From Swanson to Pukekohe, with Te Huia to Hamilton.</figcaption></figure>
+      <figure><a href="screenshots/08-trains-city.jpg"><img src="screenshots/08-trains-city.jpg" alt="The City Rail Link, zoomed in, with a train's next stops" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Through the CRL.</b> Click a train for its next stops and times, or a station for every platform's departures.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Every bus in Auckland, on one map</h2>
+    <p class="sub">All 600+ buses at rush hour, coloured by operator, with filters for electric buses, double-deckers and operators. Click one for its route, next stops, speed, how full it is, and its model with a real photo.</p>
+    <div class="grid">
+      <figure><a href="screenshots/09-live.jpg"><img src="screenshots/09-live.jpg" alt="Every bus on the live map" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>The whole network.</b> 630 buses at 8:40 pm on a Monday.</figcaption></figure>
+      <figure><a href="screenshots/10-live-bus.jpg"><img src="screenshots/10-live-bus.jpg" alt="A selected bus with its route and next stops" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Follow a bus.</b> Its route, next stops and the model it is.</figcaption></figure>
+      <figure><a href="screenshots/06-stops.jpg"><img src="screenshots/06-stops.jpg" alt="Waitematā station departures" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Any stop or station.</b> Live departures from every platform, over detailed maps.</figcaption></figure>
+      <figure><a href="screenshots/11-routes.jpg"><img src="screenshots/11-routes.jpg" alt="Every route running today" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Every route.</b> All 210 routes running today, and where they go.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>The fleet, with real photos</h2>
+    <p class="sub">Every bus model on Auckland's roads, how many are out right now and where, with photos from the AT Metro Wiki. And a Fleet dex: a model counts once one pulls up at your stop.</p>
+    <div class="grid">
+      <figure><a href="screenshots/12-fleet.jpg"><img src="screenshots/12-fleet.jpg" alt="Every bus model with photos" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>18 models.</b> From the CRRC eT12 MAX to the Enviro500 double-decker.</figcaption></figure>
+      <figure><a href="screenshots/13-fleet-model.jpg"><img src="screenshots/13-fleet-model.jpg" alt="The CRRC eT12 MAX page" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>A page per model.</b> Specs, fleet numbers and a live map of every one out now.</figcaption></figure>
+      <figure><a href="screenshots/14-fleet-dex.jpg"><img src="screenshots/14-fleet-dex.jpg" alt="The Fleet dex" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Fleet dex.</b> Collect them all, from "Rookie spotter" to "Depot legend".</figcaption></figure>
+      <figure><a href="screenshots/15-alerts.jpg"><img src="screenshots/15-alerts.jpg" alt="Service alerts" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Alerts.</b> Every detour, moved stop and cancellation; yours first.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Made for Auckland</h2>
+    <p class="sub">Six colour themes, each after something Auckland: Waitematā, Pōhutukawa, Kawakawa, Kōwhai, Rangitoto and Tūī. Light or dark, following Windows. Kiwi mode says Mōrena. Search everything with Ctrl+K.</p>
+    <div class="grid">
+      <figure><a href="screenshots/18-theme-light.jpg"><img src="screenshots/18-theme-light.jpg" alt="The Pōhutukawa theme, light" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Pōhutukawa</b>, light.</figcaption></figure>
+      <figure><a href="screenshots/19-theme-kawakawa.jpg"><img src="screenshots/19-theme-kawakawa.jpg" alt="The Kawakawa theme, dark" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Kawakawa</b>, dark.</figcaption></figure>
+      <figure><a href="screenshots/16-search.jpg"><img src="screenshots/16-search.jpg" alt="Search everything" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Ctrl+K.</b> Places, stops, routes, fleet numbers, models and actions.</figcaption></figure>
+      <figure><a href="screenshots/17-settings.jpg"><img src="screenshots/17-settings.jpg" alt="Settings" loading="lazy" width="1920" height="1080"></a>
+        <figcaption><b>Settings.</b> Your stops, saved places, alerts, themes and keys.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Get it</h2>
+    <ol class="steps">
+      <li>Download <b>AKL-Live-Setup</b> from <a href="https://github.com/intelarc/akl-live-desktop/releases/latest">the latest release</a> and run it. It installs just for you (no admin), with Start menu and desktop shortcuts. If Windows warns about an unknown app, choose <b>More info → Run anyway</b>.</li>
+      <li>The first time it opens, it asks for your Auckland Transport API key. Sign up free at <a href="https://dev-portal.at.govt.nz">dev-portal.at.govt.nz</a>, subscribe to AT's GTFS and real-time APIs, and paste your primary key in.</li>
+    </ol>
+    <figure class="small"><a href="screenshots/01-welcome.jpg" style="max-width:640px"><img src="screenshots/01-welcome.jpg" alt="The first-run welcome screen asking for an AT key" loading="lazy" width="1920" height="1080"></a></figure>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    Live data from the Auckland Transport developer API. Not affiliated with Auckland Transport.
+    Maps by MapLibre with imagery from Esri and streets from OpenFreeMap © OpenStreetMap contributors.
+    Bus photos from the AT Metro Wiki (CC BY-SA) and Wikimedia Commons. Weather by Open-Meteo.
+    Made by Aryan Narayan.
+  </div>
+</footer>
+</body>
+</html>

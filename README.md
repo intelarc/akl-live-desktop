@@ -6,7 +6,24 @@ maps, for Windows.
 
 **[See it in screenshots →](https://intelarc.github.io/akl-live-desktop/)**
 
-<!-- screenshots -->
+![The Buses screen: the 27H both ways, with live scenes, countdowns and a real photo of the bus that's coming](docs/screenshots/02-buses.jpg)
+
+| | |
+|---|---|
+| ![Directions from Hillsborough to Auckland Airport](docs/screenshots/04-directions.jpg) | ![The step-by-step view](docs/screenshots/05-directions-steps.jpg) |
+| **Directions:** every bus, train and ferry, planned on your PC | **Step by step,** with live delays, reminders and calendar |
+| ![The train network drawn along the real tracks, with live trains](docs/screenshots/07-trains.jpg) | ![The City Rail Link with a selected train's next stops](docs/screenshots/08-trains-city.jpg) |
+| **Trains:** the whole network in AT's colours, live | **Through the CRL,** with a train's next stops |
+| ![Every bus in Auckland on one map](docs/screenshots/09-live.jpg) | ![A selected bus with its route and model](docs/screenshots/10-live-bus.jpg) |
+| **Live:** 600+ buses on one map | **Follow any bus** and see which model it is |
+| ![Every bus model with real photos](docs/screenshots/12-fleet.jpg) | ![The Fleet dex](docs/screenshots/14-fleet-dex.jpg) |
+| **Fleet:** every model, with real photos | **Fleet dex:** collect the models at your stop |
+| ![Every route running today](docs/screenshots/11-routes.jpg) | ![Waitematā station's departures](docs/screenshots/06-stops.jpg) |
+| **Routes:** all 210, and where they go | **Stops:** live departures from any stop or station |
+| ![The Pōhutukawa theme in light mode](docs/screenshots/18-theme-light.jpg) | ![Settings with the six colour themes](docs/screenshots/17-settings.jpg) |
+| **Six Auckland colour themes,** light or dark | **Settings** |
+
+More on the [screenshots page](https://intelarc.github.io/akl-live-desktop/).
 
 ## Install
 
